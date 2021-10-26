@@ -19,6 +19,7 @@ namespace ClientCore
         private const string GAME_FILTERS = "GameFilters";
 
         private const bool DEFAULT_SHOW_FRIENDS_ONLY_GAMES = false;
+        private const bool DEFAULT_HIDE_BLOCKED_PLAYER_GAMES = false;
         private const bool DEFAULT_HIDE_LOCKED_GAMES = false;
         private const bool DEFAULT_HIDE_PASSWORDED_GAMES = false;
         private const bool DEFAULT_HIDE_INCOMPATIBLE_GAMES = false;
@@ -122,6 +123,7 @@ namespace ClientCore
 
             SortState = new IntSetting(iniFile, GAME_FILTERS, "SortState", (int)SortDirection.None);
             ShowFriendGamesOnly = new BoolSetting(iniFile, GAME_FILTERS, "ShowFriendGamesOnly", DEFAULT_SHOW_FRIENDS_ONLY_GAMES);
+            HideBlockedPlayerGames = new BoolSetting(iniFile, GAME_FILTERS, "HideBlockedPlayerGames", DEFAULT_HIDE_BLOCKED_PLAYER_GAMES);
             HideLockedGames = new BoolSetting(iniFile, GAME_FILTERS, "HideLockedGames", DEFAULT_HIDE_LOCKED_GAMES);
             HidePasswordedGames = new BoolSetting(iniFile, GAME_FILTERS, "HidePasswordedGames", DEFAULT_HIDE_PASSWORDED_GAMES);
             HideIncompatibleGames = new BoolSetting(iniFile, GAME_FILTERS, "HideIncompatibleGames", DEFAULT_HIDE_INCOMPATIBLE_GAMES);
@@ -211,6 +213,8 @@ namespace ClientCore
         
         public BoolSetting ShowFriendGamesOnly { get; private set; }
         
+        public BoolSetting HideBlockedPlayerGames { get; private set; }
+        
         public BoolSetting HideLockedGames { get; private set; }
         
         public BoolSetting HidePasswordedGames { get; private set; }
@@ -297,6 +301,7 @@ namespace ClientCore
         public bool IsGameFiltersApplied()
         {
             return ShowFriendGamesOnly.Value != DEFAULT_SHOW_FRIENDS_ONLY_GAMES ||
+                   HideBlockedPlayerGames.Value != DEFAULT_HIDE_BLOCKED_PLAYER_GAMES ||
                    HideLockedGames.Value != DEFAULT_HIDE_LOCKED_GAMES ||
                    HidePasswordedGames.Value != DEFAULT_HIDE_PASSWORDED_GAMES ||
                    HideIncompatibleGames.Value != DEFAULT_HIDE_INCOMPATIBLE_GAMES ||
@@ -306,6 +311,7 @@ namespace ClientCore
         public void ResetGameFilters()
         {
             ShowFriendGamesOnly.Value = DEFAULT_SHOW_FRIENDS_ONLY_GAMES;
+            HideBlockedPlayerGames.Value = DEFAULT_HIDE_BLOCKED_PLAYER_GAMES;
             HideLockedGames.Value = DEFAULT_HIDE_LOCKED_GAMES;
             HideIncompatibleGames.Value = DEFAULT_HIDE_INCOMPATIBLE_GAMES;
             HidePasswordedGames.Value = DEFAULT_HIDE_PASSWORDED_GAMES;

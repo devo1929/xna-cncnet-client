@@ -416,6 +416,9 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             // friends list takes priority over other filters below
             if (UserINISettings.Instance.ShowFriendGamesOnly)
                 return hg.Players.Any(p => cncnetUserData.IsFriend(p));
+
+            if (UserINISettings.Instance.HideBlockedPlayerGames.Value)
+                return !hg.Players.Any(p => cncnetUserData.IsIgnored(GetUserForUserName(p)?.Ident));
             
             if (UserINISettings.Instance.HideLockedGames.Value && hg.Locked)
                 return false;
@@ -1322,7 +1325,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             {
                 var user = current.Value;
                 user.IRCUser.IsFriend = cncnetUserData.IsFriend(user.IRCUser.Name);
-                user.IRCUser.IsIgnored = cncnetUserData.IsIgnored(user.IRCUser.Name);
+                user.IRCUser.IsIgnored = cncnetUserData.IsIgnored(user.IRCUser.Ident);
                 lbPlayerList.AddUser(user);
                 current = current.Next;
             }
@@ -1576,11 +1579,16 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             return true;
         }
 
+        private IRCUser GetUserForUserName(string username)
+        {
+            return connectionManager.UserList.Find(u => u.Name == username);
+        }
+
         private Texture2D GetUserTexture(string username)
         {
             Texture2D senderGameIcon = unknownGameIcon;
 
-            IRCUser iu = connectionManager.UserList.Find(u => u.Name == username);
+            IRCUser iu = GetUserForUserName(username);
 
             if (iu != null && iu.GameID >= 0 && iu.GameID < gameCollection.GameList.Count)
             {

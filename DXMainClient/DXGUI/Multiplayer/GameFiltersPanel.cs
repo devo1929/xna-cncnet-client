@@ -13,6 +13,7 @@ namespace DTAClient.DXGUI.Multiplayer
         private const int maxPlayerCount = 8;
 
         private XNAClientCheckBox chkBoxFriendsOnly;
+        private XNAClientCheckBox chkBoxHideBlockedPlayerGames;
         private XNAClientCheckBox chkBoxHideLockedGames;
         private XNAClientCheckBox chkBoxHidePasswordedGames;
         private XNAClientCheckBox chkBoxHideIncompatibleGames;
@@ -46,11 +47,19 @@ namespace DTAClient.DXGUI.Multiplayer
                 0, 0
             );
 
+            chkBoxHideBlockedPlayerGames = new XNAClientCheckBox(WindowManager);
+            chkBoxHideBlockedPlayerGames.Name = nameof(chkBoxHideBlockedPlayerGames);
+            chkBoxHideBlockedPlayerGames.Text = "Hide Games With Blocked Players";
+            chkBoxHideBlockedPlayerGames.ClientRectangle = new Rectangle(
+                gap, chkBoxFriendsOnly.Y + UIDesignConstants.BUTTON_HEIGHT + gap,
+                0, 0
+            );
+
             chkBoxHideLockedGames = new XNAClientCheckBox(WindowManager);
             chkBoxHideLockedGames.Name = nameof(chkBoxHideLockedGames);
             chkBoxHideLockedGames.Text = "Hide Locked Games";
             chkBoxHideLockedGames.ClientRectangle = new Rectangle(
-                gap, chkBoxFriendsOnly.Y + UIDesignConstants.BUTTON_HEIGHT + gap,
+                gap, chkBoxHideBlockedPlayerGames.Y + UIDesignConstants.BUTTON_HEIGHT + gap,
                 0, 0
             );
 
@@ -118,6 +127,7 @@ namespace DTAClient.DXGUI.Multiplayer
 
             AddChild(lblTitle);
             AddChild(chkBoxFriendsOnly);
+            AddChild(chkBoxHideBlockedPlayerGames);
             AddChild(chkBoxHideLockedGames);
             AddChild(chkBoxHidePasswordedGames);
             AddChild(chkBoxHideIncompatibleGames);
@@ -148,6 +158,7 @@ namespace DTAClient.DXGUI.Multiplayer
         {
             var userIniSettings = UserINISettings.Instance;
             userIniSettings.ShowFriendGamesOnly.Value = chkBoxFriendsOnly.Checked;
+            userIniSettings.HideBlockedPlayerGames.Value = chkBoxHideBlockedPlayerGames.Checked;
             userIniSettings.HideLockedGames.Value = chkBoxHideLockedGames.Checked;
             userIniSettings.HidePasswordedGames.Value = chkBoxHidePasswordedGames.Checked;
             userIniSettings.HideIncompatibleGames.Value = chkBoxHideIncompatibleGames.Checked;
@@ -160,6 +171,7 @@ namespace DTAClient.DXGUI.Multiplayer
         {
             var userIniSettings = UserINISettings.Instance;
             chkBoxFriendsOnly.Checked = userIniSettings.ShowFriendGamesOnly.Value;
+            chkBoxHideBlockedPlayerGames.Checked = userIniSettings.HideBlockedPlayerGames.Value;
             chkBoxHideLockedGames.Checked = userIniSettings.HideLockedGames.Value;
             chkBoxHidePasswordedGames.Checked = userIniSettings.HidePasswordedGames.Value;
             chkBoxHideIncompatibleGames.Checked = userIniSettings.HideIncompatibleGames.Value;
