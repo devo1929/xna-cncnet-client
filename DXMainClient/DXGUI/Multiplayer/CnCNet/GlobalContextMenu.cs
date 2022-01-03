@@ -112,16 +112,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
                 return;
             }
 
-            string messageBody = ProgramConstants.GAME_INVITE_CTCP_COMMAND + " " + contextMenuData.inviteChannelName + ";" + contextMenuData.inviteGameName;
-
-            if (!string.IsNullOrEmpty(contextMenuData.inviteChannelPassword))
-            {
-                messageBody += ";" + contextMenuData.inviteChannelPassword;
-            }
-
-            connectionManager.SendCustomMessage(new QueuedMessage(
-                "PRIVMSG " + GetIrcUser().Name + " :\u0001" + messageBody + "\u0001", QueuedMessageType.CHAT_MESSAGE, 0
-            ));
+            connectionManager.InvitePlayerToGame(GetIrcUser().Name, contextMenuData.inviteChannelName, contextMenuData.inviteGameName, contextMenuData.inviteChannelPassword);
         }
 
         private void UpdateButtons()

@@ -32,6 +32,7 @@ namespace DTAClient.Domain.Multiplayer
         public bool Ready { get; set; }
         public bool AutoReady { get; set; }
         public bool IsAI { get; set; }
+        public bool IsInvite { get; set; }
 
         public bool IsInGame { get; set; }
         public virtual string IPAddress { get; set; } = "0.0.0.0";

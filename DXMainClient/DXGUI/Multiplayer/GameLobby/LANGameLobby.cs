@@ -297,7 +297,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
         {
             var lpInfo = (LANPlayerInfo)sender;
             CleanUpPlayer(lpInfo);
-            Players.Remove(lpInfo);
+            AllPlayers.Remove(lpInfo);
 
             AddNotice(lpInfo.Name + " has left the game.");
 
@@ -450,7 +450,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             {
                 BroadcastMessage(PLAYER_QUIT_COMMAND);
                 Players.ForEach(p => CleanUpPlayer((LANPlayerInfo)p));
-                Players.Clear();
+                ClearPlayers();
                 listener.Stop();
             }
             else
@@ -482,7 +482,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
 
             var sb = new ExtendedStringBuilder(PLAYER_OPTIONS_BROADCAST_COMMAND + " ", true);
             sb.Separator = ProgramConstants.LAN_DATA_SEPARATOR;
-            foreach (PlayerInfo pInfo in Players.Concat(AIPlayers))
+            foreach (PlayerInfo pInfo in AllPlayers)
             {
                 sb.Append(pInfo.Name);
                 sb.Append(pInfo.SideId);
@@ -696,7 +696,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
                     if (!lpInfo.Update(gameTime))
                     {
                         CleanUpPlayer(lpInfo);
-                        Players.RemoveAt(i);
+                        AllPlayers.RemoveAt(i);
                         AddNotice(lpInfo.Name + " - connection timed out");
                         CopyPlayerDataToUI();
                         BroadcastPlayerOptions();
@@ -874,8 +874,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             PlayerInfo localPlayer = FindLocalPlayer();
             int oldSideId = localPlayer == null ? -1 : localPlayer.SideId;
 
-            Players.Clear();
-            AIPlayers.Clear();
+            AllPlayers.Clear();
 
             for (int i = 0; i < playerCount; i++)
             {
@@ -943,13 +942,13 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
 
         private void HandlePlayerQuit(string sender)
         {
-            PlayerInfo pInfo = Players.Find(p => p.Name == sender);
+            PlayerInfo pInfo = AllPlayers.Find(p => p.Name == sender);
 
             if (pInfo == null)
                 return;
 
             AddNotice(pInfo.Name + " has left the game.");
-            Players.Remove(pInfo);
+            AllPlayers.Remove(pInfo);
             ClearReadyStatuses();
             CopyPlayerDataToUI();
             BroadcastPlayerOptions();

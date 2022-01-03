@@ -136,14 +136,13 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
                     return "The selected map cannot be played with more than " + Map.MaxPlayers + " players.";
                 }
 
-                IEnumerable<PlayerInfo> concatList = Players.Concat(AIPlayers);
 
-                foreach (PlayerInfo pInfo in concatList)
+                foreach (PlayerInfo pInfo in AllPlayers)
                 {
                     if (pInfo.StartingLocation == 0)
                         continue;
 
-                    if (concatList.Count(p => p.StartingLocation == pInfo.StartingLocation) > 1)
+                    if (AllPlayers.Count(p => p.StartingLocation == pInfo.StartingLocation) > 1)
                     {
                         return "Multiple players cannot share the same starting location on the selected map.";
                     }
@@ -178,8 +177,8 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
 
         protected override void BtnLeaveGame_LeftClick(object sender, EventArgs e)
         {
-            this.Enabled = false;
-            this.Visible = false;
+            Enabled = false;
+            Visible = false;
 
             Exited?.Invoke(this, EventArgs.Empty);
 
@@ -351,7 +350,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             CheckLoadedPlayerVariableBounds(player);
 
             player.Name = ProgramConstants.PLAYERNAME;
-            Players.Add(player);
+            AllPlayers.Add(player);
 
             List<string> keys = skirmishSettingsIni.GetSectionKeys("AIPlayers");
 
@@ -379,7 +378,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
                 }
 
                 if (AIPlayers.Count < MAX_PLAYER_COUNT - 1)
-                    AIPlayers.Add(aiPlayer);
+                    AllPlayers.Add(aiPlayer);
             }
 
             if (ClientConfiguration.Instance.SaveSkirmishGameOptions)
@@ -477,14 +476,13 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
 
         private void InitDefaultSettings()
         {
-            Players.Clear();
-            AIPlayers.Clear();
+            AllPlayers.Clear();
 
-            Players.Add(new PlayerInfo(ProgramConstants.PLAYERNAME, 0, 0, 0, 0));
+            AllPlayers.Add(new PlayerInfo(ProgramConstants.PLAYERNAME, 0, 0, 0, 0));
             PlayerInfo aiPlayer = new PlayerInfo("Easy AI", 0, 0, 0, 0);
             aiPlayer.IsAI = true;
             aiPlayer.AILevel = 2;
-            AIPlayers.Add(aiPlayer);
+            AllPlayers.Add(aiPlayer);
 
             LoadDefaultGameModeMap();
         }

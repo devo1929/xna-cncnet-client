@@ -910,10 +910,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
 
         public virtual void Clear()
         {
-            if (!IsHost)
-                AIPlayers.Clear();
-
-            Players.Clear();
+            AllPlayers.Clear();
         }
 
         protected override void OnGameOptionChanged()
@@ -987,7 +984,6 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
         {
             foreach (XNAClientDropDown dd in ddPlayerNames)
             {
-                dd.Items[0].Texture = null;
                 dd.ToolTip.Text = string.Empty;
             }
         }

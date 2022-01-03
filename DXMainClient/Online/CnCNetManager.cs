@@ -176,6 +176,21 @@ namespace DTAClient.Online
             SendCustomMessage(new QueuedMessage($"WHOIS {nick}", QueuedMessageType.WHOIS_MESSAGE, 0));
         }
 
+        public void InvitePlayerToGame(string playerName, string channelName, string gameName, string channelPassword = null)
+        {
+            string messageBody = $"{ProgramConstants.GAME_INVITE_CTCP_COMMAND} {channelName};{gameName}";
+
+            if (!string.IsNullOrEmpty(channelPassword))
+            {
+                messageBody += $";{channelPassword}";
+            }
+
+            messageBody = $"PRIVMSG {playerName} :\u0001{messageBody}\u0001";
+            SendCustomMessage(new QueuedMessage(
+                messageBody, QueuedMessageType.CHAT_MESSAGE, 0
+            ));
+        }
+
         public void OnAttemptedServerChanged(string serverName)
         {
             // AddCallback is necessary for thread-safety; OnAttemptedServerChanged

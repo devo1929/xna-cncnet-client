@@ -19,6 +19,7 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using DTAClient.Domain.Multiplayer.CnCNet;
+using DTAClient.DXGUI.Multiplayer.GameLobby.Players;
 
 namespace DTAClient.DXGUI.Multiplayer.GameLobby
 {
@@ -40,6 +41,10 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
         private const string CHEAT_DETECTED_MESSAGE = "CD";
         private const string DICE_ROLL_MESSAGE = "DR";
         private const string CHANGE_TUNNEL_SERVER_MESSAGE = "CHTNL";
+        private const string FRIENDS_DDI_LABEL = "Friends:";
+        private const string HUMAN_PLAYER_BROADCAST_ID = "H";
+        private const string AI_PLAYER_BROADCAST_ID = "A";
+        private const string INVITE_BROADCAST_ID = "I";
 
         public CnCNetGameLobby(WindowManager windowManager, string iniName,
             TopBar topBar, CnCNetManager connectionManager,
@@ -229,7 +234,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             else
             {
                 channel.ChannelModesChanged += Channel_ChannelModesChanged;
-                AIPlayers.Clear();
+                ClearAI();
                 btnChangeTunnel.Disable();
             }
 
@@ -464,11 +469,11 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
                 return;
             }
 
-            int index = Players.FindIndex(p => p.Name == e.UserName);
+            var playerInfo = Players.Find(p => p.Name == e.UserName);
 
-            if (index > -1)
+            if (playerInfo != null)
             {
-                Players.RemoveAt(index);
+                AllPlayers.Remove(playerInfo);
                 CopyPlayerDataToUI();
                 UpdateDiscordPresence();
                 ClearReadyStatuses();
@@ -488,14 +493,15 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             }
             UpdateDiscordPresence();
         }
-
+        
         private void Channel_UserAdded(object sender, ChannelUserEventArgs e)
         {
             PlayerInfo pInfo = new PlayerInfo(e.User.IRCUser.Name);
-            Players.Add(pInfo);
+            AllPlayers.Add(pInfo);
+            ReorderAllPlayers();
 
-            if (Players.Count + AIPlayers.Count > MAX_PLAYER_COUNT && AIPlayers.Count > 0)
-                AIPlayers.RemoveAt(AIPlayers.Count - 1);
+            if (AllPlayers.Count > MAX_PLAYER_COUNT && AIPlayers.Count > 0)
+                AllPlayers.RemoveAt(AIPlayers.Count - 1);
 
             sndJoinSound.Play();
 
@@ -530,13 +536,83 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             }
         }
 
+        protected override void AddPlayerNameItems(PlayerInfo pInfo, int playerIndex)
+        {
+            base.AddPlayerNameItems(pInfo, playerIndex);
+            
+            AddInviteFriendPlayerNameItems(playerIndex);
+        }
+
+        private void AddInviteFriendPlayerNameItems(int playerIndex)
+        {
+            var ddPlayerName = ddPlayerNames[playerIndex];
+
+            void OnCncnetUserDataOnUserFriendToggled(object sender, UserNameEventArgs args)
+            {
+                AddInviteFriendPlayerNameItems(ddPlayerName, cncnetUserData.FriendList);
+            }
+
+            cncnetUserData.UserFriendToggled -= OnCncnetUserDataOnUserFriendToggled;
+            AddInviteFriendPlayerNameItems(ddPlayerName, cncnetUserData.FriendList);
+            cncnetUserData.UserFriendToggled += OnCncnetUserDataOnUserFriendToggled;
+        }
+
+        private void AddInviteFriendPlayerNameItems(XNAClientDropDown ddPlayerName, List<string> friendNames)
+        {
+            if (ddPlayerName.Items.All(i => i.Text != FRIENDS_DDI_LABEL))
+            {
+                // separator
+                ddPlayerName.AddItem(new XNADropDownItem()
+                {
+                    Text = FRIENDS_DDI_LABEL,
+                    Selectable = false
+                });
+            }
+
+            ddPlayerName.Items.RemoveAll(i => (i.Tag is InvitePlayerDropDownItem));
+            foreach (var friendName in friendNames.OrderBy(friendName => friendName))
+            {
+                ddPlayerName.AddItem(new XNADropDownItem()
+                {
+                    Text = friendName,
+                    Tag = new InvitePlayerDropDownItem()
+                    {
+                        PlayerInfo = new PlayerInfo()
+                        {
+                            Name = friendName,
+                            IsInvite = true
+                        },
+                        SelectAction = InvitePlayerToGameAction(ddPlayerName),
+                    }
+                });
+            }
+        }
+
+        private void InvitePlayerToGame(string playerName)
+        {
+            connectionManager.InvitePlayerToGame(playerName, channel.ChannelName, channel.UIName, channel.Password);
+        }
+
+        private Action InvitePlayerToGameAction(XNAClientDropDown ddPlayerName) => () =>
+        {
+            if (!(ddPlayerName.SelectedItem?.Tag is InvitePlayerDropDownItem inviteItem))
+                return;
+
+            var playerName = inviteItem.PlayerInfo.Name;
+            ddPlayerName.SelectedItem.Text = $"**{inviteItem.PlayerInfo.Name}";
+            inviteItem.PlayerInfo.Name = $"**{inviteItem.PlayerInfo.Name}";
+            inviteItem.Type = PlayerDropDownItemTypeEnum.Invite;
+            InvitePlayerToGame(playerName);
+            CopyPlayerDataFromUI(ddPlayerName, null);
+        };
+
         private void RemovePlayer(string playerName)
         {
             PlayerInfo pInfo = Players.Find(p => p.Name == playerName);
 
             if (pInfo != null)
             {
-                Players.Remove(pInfo);
+                AllPlayers.Remove(pInfo);
 
                 CopyPlayerDataToUI();
 
@@ -773,12 +849,15 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
         {
             // Broadcast player options
             StringBuilder sb = new StringBuilder("PO ");
-            foreach (PlayerInfo pInfo in Players.Concat(AIPlayers))
+            foreach (PlayerInfo pInfo in AllPlayers)
             {
                 if (pInfo.IsAI)
-                    sb.Append(pInfo.AILevel);
+                    sb.Append($"{AI_PLAYER_BROADCAST_ID}:{pInfo.AILevel}");
+                else if (pInfo.IsInvite)
+                    sb.Append($"{INVITE_BROADCAST_ID}:{pInfo.Name}");
                 else
-                    sb.Append(pInfo.Name);
+                    sb.Append($"{HUMAN_PLAYER_BROADCAST_ID}:{pInfo.Name}");
+                
                 sb.Append(";");
 
                 // Combine the options into one integer to save bandwidth in
@@ -795,7 +874,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
                 int value = BitConverter.ToInt32(byteArray, 0);
                 sb.Append(value);
                 sb.Append(";");
-                if (!pInfo.IsAI)
+                if (!pInfo.IsAI && !pInfo.IsInvite)
                 {
                     if (pInfo.AutoReady && !pInfo.IsInGame)
                         sb.Append(2);
@@ -832,22 +911,28 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             if (sender != hostName)
                 return;
 
-            Players.Clear();
-            AIPlayers.Clear();
+            AllPlayers.Clear();
 
             string[] parts = message.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
             for (int i = 0; i < parts.Length;)
             {
                 PlayerInfo pInfo = new PlayerInfo();
 
-                string pName = parts[i];
+                string[] pParts = parts[i].Split(':');
+                string pIdentifier = pParts[0];
+                string pName = pParts[1];
                 int converted = Conversions.IntFromString(pName, -1);
 
-                if (converted > -1)
+                if (pIdentifier == AI_PLAYER_BROADCAST_ID)
                 {
                     pInfo.IsAI = true;
                     pInfo.AILevel = converted;
                     pInfo.Name = AILevelToName(converted);
+                }
+                else if (pIdentifier == INVITE_BROADCAST_ID)
+                {
+                    pInfo.Name = pName;
+                    pInfo.IsInvite = true;
                 }
                 else
                 {
@@ -898,10 +983,9 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
                 if (pInfo.IsAI)
                 {
                     pInfo.Ready = true;
-                    AIPlayers.Add(pInfo);
                     i += AI_PLAYER_OPTIONS_LENGTH;
                 }
-                else
+                else if(!pInfo.IsInvite)
                 {
                     if (parts.Length <= i + 2)
                         return;
@@ -914,9 +998,9 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
                     pInfo.Ready = readyStatus > 0;
                     pInfo.AutoReady = readyStatus > 1;
 
-                    Players.Add(pInfo);
                     i += HUMAN_PLAYER_OPTIONS_LENGTH;
                 }
+                AllPlayers.Add(pInfo);
             }
 
             CopyPlayerDataToUI();
@@ -1495,23 +1579,19 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             AccelerateGameBroadcasting();
         }
 
-        protected override void KickPlayer(int playerIndex)
+        protected override void KickPlayer(PlayerInfo pInfo)
         {
-            if (playerIndex >= Players.Count)
+            if (pInfo == null || pInfo.IsAI)
                 return;
-
-            var pInfo = Players[playerIndex];
 
             AddNotice("Kicking " + pInfo.Name + " from the game...");
             channel.SendKickMessage(pInfo.Name, 8);
         }
 
-        protected override void BanPlayer(int playerIndex)
+        protected override void BanPlayer(PlayerInfo pInfo)
         {
-            if (playerIndex >= Players.Count)
+            if (pInfo == null || pInfo.IsAI)
                 return;
-
-            var pInfo = Players[playerIndex];
 
             var user = connectionManager.UserList.Find(u => u.Name == pInfo.Name);
 

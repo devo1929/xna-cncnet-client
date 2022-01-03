@@ -511,6 +511,13 @@
     <Compile Include="DXGUI\Multiplayer\GameLobby\MultiplayerGameLobby.cs" />
     <Compile Include="DXGUI\Multiplayer\GameLobby\CommandHandlers\NoParamCommandHandler.cs" />
     <Compile Include="DXGUI\Multiplayer\GameLobby\PlayerLocationIndicator.cs" />
+    <Compile Include="DXGUI\Multiplayer\GameLobby\Players\AIPlayerDropDownItem.cs" />
+    <Compile Include="DXGUI\Multiplayer\GameLobby\Players\HostPlayerDropDownItem.cs" />
+    <Compile Include="DXGUI\Multiplayer\GameLobby\Players\InvitePlayerDropDownItem.cs" />
+    <Compile Include="DXGUI\Multiplayer\GameLobby\Players\HumanPlayerDropDownItem.cs" />
+    <Compile Include="DXGUI\Multiplayer\GameLobby\Players\AbstractPlayerDropDownItem.cs" />
+    <Compile Include="DXGUI\Multiplayer\GameLobby\Players\PlayerDropDownItemTypeEnum.cs" />
+    <Compile Include="DXGUI\Multiplayer\GameLobby\Players\UnusedPlayerDropDownItem.cs" />
     <Compile Include="DXGUI\Multiplayer\GameLobby\SkirmishLobby.cs" />
     <Compile Include="DXGUI\Multiplayer\GameLobby\CommandHandlers\StringCommandHandler.cs" />
     <Compile Include="DXGUI\Multiplayer\LANGameCreationWindow.cs" />
