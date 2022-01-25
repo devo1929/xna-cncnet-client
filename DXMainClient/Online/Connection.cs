@@ -771,6 +771,10 @@ namespace DTAClient.Online
                             connectionManager.OnUserNicknameChange(oldNick, newNick);
                         }
                         break;
+                    case "INVITE":
+                        // string inviteUserName = prefix.Substring(0, prefix.IndexOf('!'));
+                        // connectionManager.OnPrivateMessageReceived(inviteUserName, privmsg);
+                        break;
                 }
             }
             catch

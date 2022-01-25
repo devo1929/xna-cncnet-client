@@ -768,19 +768,25 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
             return GetJoinGameErrorBase();
         }
-        
+
         /// <summary>
         /// Returns an error message if game is not join-able, otherwise null.
         /// </summary>
         /// <param name="hg"></param>
+        /// <param name="fromInvite">If true, bypass game lock</param>
         /// <returns></returns>
-        private string GetJoinGameError(HostedCnCNetGame hg)
+        private string GetJoinGameError(HostedCnCNetGame hg, bool fromInvite)
         {
             if (hg.Game.InternalName.ToUpper() != localGameID.ToUpper())
                 return "The selected game is for " + gameCollection.GetGameNameFromInternalName(hg.Game.InternalName);
 
-            if (hg.Locked)
-                return "The selected game is locked!";
+            switch (hg.Locked)
+            {
+                case true when !fromInvite:
+                    return "The selected game is locked!";
+                case true when hg.Players.Length == hg.MaxPlayers:
+                    return "Game max player limit has been met!";
+            }
 
             if (hg.IsLoadedGame && !hg.Players.Contains(ProgramConstants.PLAYERNAME))
                 return "You do not exist in the saved game!";
@@ -797,7 +803,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             JoinGameByIndex(hostedGameIndex, string.Empty);
         }
 
-        private bool JoinGameByIndex(int gameIndex, string password)
+        private bool JoinGameByIndex(int gameIndex, string password, bool fromInvite = false)
         {
             string error = GetJoinGameErrorByIndex(gameIndex);
             if (!string.IsNullOrEmpty(error))
@@ -806,19 +812,20 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
                 return false;
             }
 
-            return JoinGame((HostedCnCNetGame) lbGameList.HostedGames[gameIndex], password, connectionManager.MainChannel);
+            return JoinGame((HostedCnCNetGame) lbGameList.HostedGames[gameIndex], password, connectionManager.MainChannel, fromInvite);
         }
-        
+
         /// <summary>
         /// Attempt to join a game.
         /// </summary>
         /// <param name="hg">The game to join.</param>
         /// <param name="password">The password to join with.</param>
         /// <param name="messageView">The message view/list to write error messages to.</param>
+        /// <param name="fromInvite">If true, it will allow bypass of locked games</param>
         /// <returns></returns>
-        private bool JoinGame(HostedCnCNetGame hg, string password, IMessageView messageView)
+        private bool JoinGame(HostedCnCNetGame hg, string password, IMessageView messageView, bool fromInvite = false)
         {
-            string error = GetJoinGameError(hg);
+            string error = GetJoinGameError(hg, fromInvite);
             if (!string.IsNullOrEmpty(error))
             {
                 messageView.AddMessage(new ChatMessage(Color.White, error));
@@ -1242,7 +1249,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
                 }
 
                 // JoinGameByIndex does bounds checking so we're safe to pass -1 if the game doesn't exist
-                if (!JoinGameByIndex(lbGameList.HostedGames.FindIndex(hg => ((HostedCnCNetGame)hg).ChannelName == channelName), password))
+                if (!JoinGameByIndex(lbGameList.HostedGames.FindIndex(hg => ((HostedCnCNetGame)hg).ChannelName == channelName), password, true))
                 {
                     XNAMessageBox.Show(WindowManager,
                         "Failed to join",

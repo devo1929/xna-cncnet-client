@@ -120,7 +120,16 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             }
 
             connectionManager.SendCustomMessage(new QueuedMessage(
-                "PRIVMSG " + GetIrcUser().Name + " :\u0001" + messageBody + "\u0001", QueuedMessageType.CHAT_MESSAGE, 0
+                $"MODE {contextMenuData.inviteChannelName} +I $a:{GetIrcUser().Ident}", QueuedMessageType.INSTANT_MESSAGE, -1
+            ));
+
+            connectionManager.SendCustomMessage(new QueuedMessage(
+                $"PRIVMSG {GetIrcUser().Name} :\u0001{messageBody}\u0001", QueuedMessageType.CHAT_MESSAGE, 0
+            ));
+
+            // TODO this needs to replace the 'PRIVMSG' above this
+            connectionManager.SendCustomMessage(new QueuedMessage(
+                $"INVITE {GetIrcUser().Name} {contextMenuData.inviteChannelName}", QueuedMessageType.CHAT_MESSAGE, 0
             ));
         }
 
