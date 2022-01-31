@@ -480,6 +480,7 @@
     <Compile Include="DXGUI\Multiplayer\CnCNet\GlobalContextMenuData.cs" />
     <Compile Include="DXGUI\Multiplayer\CnCNet\RecentPlayerTable.cs" />
     <Compile Include="DXGUI\Multiplayer\CnCNet\RecentPlayerTableRightClickEventArgs.cs" />
+    <Compile Include="DXGUI\Multiplayer\CnCNet\TeamStartMappingPresetWindow.cs" />
     <Compile Include="DXGUI\Multiplayer\CnCNet\TunnelListBox.cs" />
     <Compile Include="DXGUI\Multiplayer\CnCNet\TunnelSelectionWindow.cs" />
     <Compile Include="DXGUI\Multiplayer\GameFiltersPanel.cs" />
@@ -524,6 +525,7 @@
     <Compile Include="DXGUI\Multiplayer\PlayerExtraOptionsPanel.cs" />
     <Compile Include="DXGUI\Multiplayer\PlayerListBox.cs" />
     <Compile Include="DXGUI\Multiplayer\TeamStartMappingsPanel.cs" />
+    <Compile Include="Extensions\TeamStartMappingListExtensions.cs" />
     <Compile Include="Online\ChannelUser.cs" />
     <Compile Include="Online\CnCNetGameCheck.cs" />
     <Compile Include="Online\CnCNetUserData.cs" />
@@ -536,6 +538,7 @@
     <Compile Include="Online\EventArguments\PrivateCTCPEventArgs.cs" />
     <Compile Include="Online\EventArguments\PrivateMessageEventArgs.cs" />
     <Compile Include="Online\EventArguments\UnreadMessageCountEventArgs.cs" />
+    <Compile Include="Online\EventArguments\UserDefinedTeamStartMappingPresetEventArgs.cs" />
     <Compile Include="Online\FileHashCalculator.cs" />
     <Compile Include="Online\IRCColor.cs" />
     <Compile Include="DXGUI\Generic\LoadingScreen.cs" />

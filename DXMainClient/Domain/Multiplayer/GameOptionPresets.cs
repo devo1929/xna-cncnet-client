@@ -37,6 +37,7 @@ namespace DTAClient.Domain.Multiplayer
 
         private Dictionary<string, bool> checkBoxValues = new Dictionary<string, bool>();
         private Dictionary<string, int> dropDownValues = new Dictionary<string, int>();
+        public PlayerExtraOptions PlayerExtraOptions { get; set; }
 
         private void AddValues<T>(IniSection section, string keyName, Dictionary<string, T> dictionary, Converter<string, T> converter)
         {
@@ -77,6 +78,25 @@ namespace DTAClient.Domain.Multiplayer
 
             AddValues(section, "CheckBoxValues", checkBoxValues, s => s == "1");
             AddValues(section, "DropDownValues", dropDownValues, s => Conversions.IntFromString(s, 0));
+
+            ReadPlayerExtraOptions(section);
+        }
+
+        private void ReadPlayerExtraOptions(IniSection section)
+        {
+            string teamStartMapping = section.GetStringValue("TeamStartMapping", null);
+            string teamStartMappingName = section.GetStringValue("TeamStartMappingName", null);
+            string teamStartmappingIsUserDefined = section.GetStringValue("TeamStartMappingIsUserDefined", "0");
+
+            // if (!string.IsNullOrEmpty(teamStartMapping) && !string.IsNullOrEmpty(teamStartMappingName))
+            // {
+            //     TeamStartMappingPreset = new TeamStartMappingPreset
+            //     {
+            //         Name = teamStartMappingName,
+            //         TeamStartMappings = TeamStartMapping.FromListString(teamStartMapping),
+            //         IsUserDefined = teamStartmappingIsUserDefined == "1"
+            //     };
+            // }
         }
 
         public void Write(IniSection section)
@@ -85,6 +105,27 @@ namespace DTAClient.Domain.Multiplayer
                 checkBoxValues.Select(s => $"{ s.Key }:{ (s.Value ? "1" : "0") }")));
             section.SetStringValue("DropDownValues", string.Join(",",
                 dropDownValues.Select(s => $"{ s.Key }:{ s.Value.ToString() }")));
+
+            WritePlayerExtraOptions(section);
+        }
+
+        private void WritePlayerExtraOptions(IniSection section)
+        {
+            if (PlayerExtraOptions == null)
+                return;
+
+            section.SetBooleanValue("IsForceRandomSides", PlayerExtraOptions.IsForceRandomSides);
+            section.SetBooleanValue("IsForceRandomColors", PlayerExtraOptions.IsForceRandomColors);
+            section.SetBooleanValue("IsForceRandomTeams", PlayerExtraOptions.IsForceRandomTeams);
+            section.SetBooleanValue("IsForceRandomStarts", PlayerExtraOptions.IsForceRandomStarts);
+            section.SetBooleanValue("IsUseTeamStartMappings", PlayerExtraOptions.IsUseTeamStartMappings);
+
+            if (!PlayerExtraOptions.TeamStartMappings?.Any() ?? true)
+                return;
+
+            // section.SetStringValue("TeamStartMapping", TeamStartMapping.ToListString(TeamStartMappingPreset.TeamStartMappings));
+            // section.SetStringValue("TeamStartMappingName", TeamStartMappingPreset.Name);
+            // section.SetStringValue("TeamStartMappingIsUserDefined", TeamStartMappingPreset.IsUserDefined ? "1" : "0");
         }
     }
 
@@ -119,7 +160,7 @@ namespace DTAClient.Domain.Multiplayer
 
             if (presets.TryGetValue(name, out GameOptionPreset value))
             {
-                
+
                 return value;
             }
 

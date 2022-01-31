@@ -1,8 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Windows.Forms;
 using ClientGUI;
 using DTAClient.Domain.Multiplayer;
+using DTAClient.DXGUI.Multiplayer.CnCNet;
+using DTAClient.Extensions;
+using DTAClient.Online.EventArguments;
 using Microsoft.Xna.Framework;
 using Rampastring.XNAUI;
 using Rampastring.XNAUI.XNAControls;
@@ -24,12 +28,17 @@ namespace DTAClient.DXGUI.Multiplayer
         private XNAClientCheckBox chkBoxForceRandomStarts;
         private XNAClientCheckBox chkBoxUseTeamStartMappings;
         private XNAClientDropDown ddTeamStartMappingPreset;
+        private XNAClientButton btnTeamStartMappingPresetMenu;
+        private XNAContextMenu menuTeamStartMappingPreset;
+        private XNAContextMenuItem menuItemSaveTeamStartMappingPreset;
+        private XNAContextMenuItem menuItemDeleteTeamStartMappingPreset;
         private TeamStartMappingsPanel teamStartMappingsPanel;
+        private TeamStartMappingPresetWindow presetWindow;
         private bool _isHost;
-        private bool ignoreMappingChanges;
 
         public EventHandler OptionsChanged;
         public EventHandler OnClose;
+        public EventHandler<UserDefinedTeamStartMappingPresetEventArgs> UserDefinedPreset;
 
         private Map _map;
 
@@ -48,8 +57,6 @@ namespace DTAClient.DXGUI.Multiplayer
         private void Mapping_Changed(object sender, EventArgs e)
         {
             Options_Changed(sender, e);
-            if (ignoreMappingChanges)
-                return;
 
             ddTeamStartMappingPreset.SelectedIndex = 0;
         }
@@ -59,6 +66,7 @@ namespace DTAClient.DXGUI.Multiplayer
             RefreshTeamStartMappingsPanel();
             chkBoxForceRandomTeams.Checked = chkBoxForceRandomTeams.Checked || chkBoxUseTeamStartMappings.Checked;
             chkBoxForceRandomTeams.AllowChecking = !chkBoxUseTeamStartMappings.Checked;
+            btnTeamStartMappingPresetMenu.AllowClick = chkBoxUseTeamStartMappings.Checked;
 
             // chkBoxForceRandomStarts.Checked = chkBoxForceRandomStarts.Checked || chkBoxUseTeamStartMappings.Checked;
             // chkBoxForceRandomStarts.AllowChecking = !chkBoxUseTeamStartMappings.Checked;
@@ -125,31 +133,70 @@ namespace DTAClient.DXGUI.Multiplayer
             ddTeamStartMappingPreset.AddItem(new XNADropDownItem
             {
                 Text = customPresetName,
-                Tag = new List<TeamStartMapping>()
+                Tag = new TeamStartMappingPreset()
             });
             ddTeamStartMappingPreset.SelectedIndex = 0;
 
             if (!(teamStartMappingPresets?.Any() ?? false)) return;
 
-            teamStartMappingPresets.ForEach(preset => ddTeamStartMappingPreset.AddItem(new XNADropDownItem
+            var mapPresets = teamStartMappingPresets.Where(p => !p.IsUserDefined).ToList();
+            var userDefinedPresets = teamStartMappingPresets.Except(mapPresets).ToList();
+
+
+            void AddPreset(TeamStartMappingPreset preset) => ddTeamStartMappingPreset.AddItem(new XNADropDownItem { Text = preset.Name, Tag = preset });
+
+            mapPresets.ForEach(AddPreset);
+
+            if (userDefinedPresets.Any())
             {
-                Text = preset.Name,
-                Tag = preset.TeamStartMappings
-            }));
+                ddTeamStartMappingPreset.AddItem(new XNADropDownItem()
+                {
+                    Text = "---- User Defined ----",
+                    Selectable = false
+                });
+                userDefinedPresets.ForEach(AddPreset);
+            }
+
+
             ddTeamStartMappingPreset.SelectedIndex = 1;
         }
 
+        private TeamStartMappingPreset GetSelectedPreset() => ddTeamStartMappingPreset.SelectedItem?.Tag as TeamStartMappingPreset;
+
         private void DdTeamMappingPreset_SelectedIndexChanged(object sender, EventArgs e)
         {
-            var selectedItem = ddTeamStartMappingPreset.SelectedItem;
-            if (selectedItem?.Text == customPresetName)
+            menuItemDeleteTeamStartMappingPreset.Selectable = false;
+            menuItemSaveTeamStartMappingPreset.Selectable = false;
+
+            var teamStartMappingPreset = GetSelectedPreset();
+            if (teamStartMappingPreset != null && !teamStartMappingPreset.IsUserDefined)
                 return;
 
-            var teamStartMappings = selectedItem?.Tag as List<TeamStartMapping>;
+            menuItemSaveTeamStartMappingPreset.Selectable = teamStartMappingPreset == null || teamStartMappingPreset.IsUserDefined;
+            menuItemDeleteTeamStartMappingPreset.Selectable = teamStartMappingPreset?.IsUserDefined ?? false;
 
-            ignoreMappingChanges = true;
-            teamStartMappingsPanel.SetTeamStartMappings(teamStartMappings);
-            ignoreMappingChanges = false;
+            teamStartMappingsPanel.MappingChanged -= Mapping_Changed;
+            ;
+            teamStartMappingsPanel.SetTeamStartMappings(teamStartMappingPreset?.TeamStartMappings ?? new List<TeamStartMapping>());
+            teamStartMappingsPanel.MappingChanged += Mapping_Changed;
+            ;
+        }
+
+        private void BtnTeamStartMappingPresetMenu_LeftClick(object sender, EventArgs e)
+        {
+            var point = new Point(btnTeamStartMappingPresetMenu.X - menuTeamStartMappingPreset.Width + 1, btnTeamStartMappingPresetMenu.Y);
+            menuTeamStartMappingPreset.Open(point);
+        }
+
+        private void SaveSelectedTeamMappingPreset()
+        {
+            presetWindow.Enable();
+            presetWindow.CenterOnParent();
+        }
+
+        private void DeleteSelectedTeamMappingPreset()
+        {
+            Console.WriteLine("");
         }
 
         private void RefreshPresetDropdown() => ddTeamStartMappingPreset.AllowDropDown = _isHost && chkBoxUseTeamStartMappings.Checked;
@@ -226,25 +273,77 @@ namespace DTAClient.DXGUI.Multiplayer
 
             ddTeamStartMappingPreset = new XNAClientDropDown(WindowManager);
             ddTeamStartMappingPreset.Name = nameof(ddTeamStartMappingPreset);
-            ddTeamStartMappingPreset.ClientRectangle = new Rectangle(lblPreset.X + 50, lblPreset.Y - 2, 160, 0);
+            ddTeamStartMappingPreset.ClientRectangle = new Rectangle(lblPreset.X + 50, lblPreset.Y - 2, 144, 0);
             ddTeamStartMappingPreset.SelectedIndexChanged += DdTeamMappingPreset_SelectedIndexChanged;
             ddTeamStartMappingPreset.AllowDropDown = true;
             AddChild(ddTeamStartMappingPreset);
+
+            btnTeamStartMappingPresetMenu = new XNAClientButton(WindowManager);
+            btnTeamStartMappingPresetMenu.IdleTexture = AssetLoader.LoadTexture("menu-sm.png");
+            btnTeamStartMappingPresetMenu.HoverTexture = AssetLoader.LoadTexture("menu-sm.png");
+            btnTeamStartMappingPresetMenu.Name = nameof(btnTeamStartMappingPresetMenu);
+            btnTeamStartMappingPresetMenu.ClientRectangle = new Rectangle(ddTeamStartMappingPreset.Right + 2, ddTeamStartMappingPreset.Y, 16, 22);
+            btnTeamStartMappingPresetMenu.LeftClick += BtnTeamStartMappingPresetMenu_LeftClick;
+            btnTeamStartMappingPresetMenu.AllowClick = false;
+            AddChild(btnTeamStartMappingPresetMenu);
 
             teamStartMappingsPanel = new TeamStartMappingsPanel(WindowManager);
             teamStartMappingsPanel.ClientRectangle = new Rectangle(200, ddTeamStartMappingPreset.Bottom + 8, Width, Height - ddTeamStartMappingPreset.Bottom + 4);
             AddChild(teamStartMappingsPanel);
 
+            menuItemSaveTeamStartMappingPreset = new XNAContextMenuItem
+            {
+                Text = "Save",
+                SelectAction = SaveSelectedTeamMappingPreset
+            };
+            menuItemDeleteTeamStartMappingPreset = new XNAContextMenuItem
+            {
+                Text = "Delete",
+                SelectAction = DeleteSelectedTeamMappingPreset
+            };
+
+            menuTeamStartMappingPreset = new XNAContextMenu(WindowManager);
+            menuTeamStartMappingPreset.ClientRectangle = new Rectangle(0, 0, 80, 0);
+            menuTeamStartMappingPreset.AddItem(menuItemSaveTeamStartMappingPreset);
+            menuTeamStartMappingPreset.AddItem(menuItemDeleteTeamStartMappingPreset);
+            AddChild(menuTeamStartMappingPreset);
+
             AddLocationAssignments();
+            AddTeamStartMappingPresetWindow();
 
             base.Initialize();
 
             RefreshTeamStartMappingsPanel();
         }
 
+        private void AddTeamStartMappingPresetWindow()
+        {
+            presetWindow = new TeamStartMappingPresetWindow(WindowManager);
+            presetWindow.PresetSaved += (sender, presetName) =>
+            {
+                if (string.IsNullOrWhiteSpace(presetName))
+                    return;
+
+                AddUserDefinedTeamStartMappingPreset(presetName);
+            };
+            AddChild(presetWindow);
+        }
+
+        private void AddUserDefinedTeamStartMappingPreset(string name)
+        {
+            UserDefinedPreset?.Invoke(this, new UserDefinedTeamStartMappingPresetEventArgs
+            {
+                Preset = new TeamStartMappingPreset
+                {
+                    Name = name,
+                    TeamStartMappings = GetTeamStartMappings()
+                }
+            });
+        }
+
         private void BtnHelp_LeftClick(object sender, EventArgs args)
         {
-            XNAMessageBox.Show(WindowManager, "Auto Allying", 
+            XNAMessageBox.Show(WindowManager, "Auto Allying",
                 "Auto allying allows the host to assign starting locations to teams, not players.\n" +
                 "When players are assigned to spawn locations, they will be auto assigned to teams based on these mappings.\n" +
                 "This is best used with random teams and random starts. However, only random teams is required.\n" +
@@ -264,9 +363,20 @@ namespace DTAClient.DXGUI.Multiplayer
             RefreshTeamStartMappingPanels();
         }
 
-        public List<TeamStartMapping> GetTeamStartMappings() 
-            => chkBoxUseTeamStartMappings.Checked ? 
-                teamStartMappingsPanel.GetTeamStartMappings() : new List<TeamStartMapping>();
+        public List<TeamStartMapping> GetTeamStartMappings()
+            => chkBoxUseTeamStartMappings.Checked ? teamStartMappingsPanel.GetTeamStartMappings() : new List<TeamStartMapping>();
+
+        public TeamStartMappingPreset GetTeamStartMappingPreset()
+        {
+            if (!IsUseTeamStartMappings())
+                return null;
+
+            return new TeamStartMappingPreset()
+            {
+                Name = ddTeamStartMappingPreset.SelectedItem?.Text,
+                TeamStartMappings = GetTeamStartMappings()
+            };
+        }
 
         public void EnableControls(bool enable)
         {
@@ -279,7 +389,7 @@ namespace DTAClient.DXGUI.Multiplayer
             teamStartMappingsPanel.EnableControls(enable && chkBoxUseTeamStartMappings.Checked);
         }
 
-        public PlayerExtraOptions GetPlayerExtraOptions() 
+        public PlayerExtraOptions GetPlayerExtraOptions()
             => new PlayerExtraOptions()
             {
                 IsForceRandomSides = IsForcedRandomSides(),
@@ -298,6 +408,16 @@ namespace DTAClient.DXGUI.Multiplayer
             chkBoxForceRandomStarts.Checked = playerExtraOptions.IsForceRandomStarts;
             chkBoxUseTeamStartMappings.Checked = playerExtraOptions.IsUseTeamStartMappings;
             teamStartMappingsPanel.SetTeamStartMappings(playerExtraOptions.TeamStartMappings);
+            SetTeamStartMappingsPreset(playerExtraOptions.TeamStartMappings); 
+        }
+
+        private void SetTeamStartMappingsPreset(List<TeamStartMapping> teamStartMappings)
+        {
+            int existingPresetIndex = ddTeamStartMappingPreset.Items
+                .FindIndex(item => (item.Tag as TeamStartMappingPreset)?.TeamStartMappings.EqualsMappings(teamStartMappings) ?? false);
+
+            if (existingPresetIndex != -1)
+                ddTeamStartMappingPreset.SelectedIndex = existingPresetIndex;
         }
 
         public void SetIsHost(bool isHost)

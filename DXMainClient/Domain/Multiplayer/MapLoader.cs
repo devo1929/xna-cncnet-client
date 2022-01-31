@@ -16,10 +16,12 @@ namespace DTAClient.Domain.Multiplayer
         public const string MAP_FILE_EXTENSION = ".map";
         private const string CUSTOM_MAPS_DIRECTORY = "Maps/Custom";
         private static readonly string CUSTOM_MAPS_CACHE = ProgramConstants.ClientUserFilesPath + "custom_map_cache";
+        private static readonly string CUSTOM_PRESETS = ProgramConstants.ClientUserFilesPath + "custom_presets";
         private const string MultiMapsSection = "MultiMaps";
         private const string GameModesSection = "GameModes";
         private const string GameModeAliasesSection = "GameModeAliases";
         private const int CurrentCustomMapCacheVersion = 1;
+        private Dictionary<string, List<TeamStartMappingPreset>> CustomPresets;
 
         /// <summary>
         /// List of game modes.
@@ -35,7 +37,7 @@ namespace DTAClient.Domain.Multiplayer
 
         /// <summary>
         /// A list of game mode aliases.
-        /// Every game mode entry that exists in this dictionary will get 
+        /// Every game mode entry that exists in this dictionary will get
         /// replaced by the game mode entries of the value string array
         /// when map is added to game mode map lists.
         /// </summary>
@@ -64,6 +66,7 @@ namespace DTAClient.Domain.Multiplayer
 
             IniFile mpMapsIni = new IniFile(ProgramConstants.GamePath + ClientConfiguration.Instance.MPMapsIniPath);
 
+            LoadCustomPresets();
             LoadGameModes(mpMapsIni);
             LoadGameModeAliases(mpMapsIni);
             LoadMultiMaps(mpMapsIni);
@@ -73,6 +76,40 @@ namespace DTAClient.Domain.Multiplayer
             GameModeMaps = new GameModeMapCollection(GameModes);
 
             MapLoadingComplete?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void LoadCustomPresets()
+        {
+            try
+            {
+                CustomPresets = JsonConvert.DeserializeObject<Dictionary<string, List<TeamStartMappingPreset>>>(File.ReadAllText(CUSTOM_PRESETS)) ??
+                                new Dictionary<string, List<TeamStartMappingPreset>>();
+            }
+            catch (Exception e)
+            {
+                Logger.Log($"Error reading custom presets: {e.Message}");
+                CustomPresets = new Dictionary<string, List<TeamStartMappingPreset>>();
+            }
+
+            foreach (string customPresetsKey in CustomPresets.Keys)
+                CustomPresets[customPresetsKey].ForEach(preset => preset.IsUserDefined = true);
+        }
+
+        private void SaveCustomPresets()
+        {
+            try
+            {
+                File.WriteAllText(CUSTOM_PRESETS, JsonConvert.SerializeObject(CustomPresets));
+            }
+            catch (Exception e)
+            {
+                Logger.Log($"Error writing custom presets file: {e.Message}");
+            }
+        }
+
+        private IEnumerable<TeamStartMappingPreset> GetPresetsForMap(string mapName)
+        {
+            return CustomPresets.ContainsKey(mapName) ? CustomPresets[mapName] : new List<TeamStartMappingPreset>();
         }
 
         private void LoadMultiMaps(IniFile mpMapsIni)
@@ -101,6 +138,7 @@ namespace DTAClient.Domain.Multiplayer
 
                 if (!map.SetInfoFromMpMapsINI(mpMapsIni))
                     continue;
+                map.TeamStartMappingPresets.AddRange(GetPresetsForMap(map.Name));
 
                 maps.Add(map);
             }
@@ -137,7 +175,7 @@ namespace DTAClient.Domain.Multiplayer
                 foreach (string key in gmAliases)
                 {
                     GameModeAliases.Add(key, mpMapsIni.GetStringValue(GameModeAliasesSection, key, string.Empty).Split(
-                        new char[] {','}, StringSplitOptions.RemoveEmptyEntries));
+                        new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries));
                 }
             }
         }
@@ -167,8 +205,11 @@ namespace DTAClient.Domain.Multiplayer
                     Map map = new Map(baseFilePath, mapFile);
                     map.CalculateSHA();
                     localMapSHAs.Add(map.SHA1);
-                    if (!customMapCache.ContainsKey(map.SHA1) && map.SetInfoFromCustomMap())
-                        customMapCache.TryAdd(map.SHA1, map);
+                    if (customMapCache.ContainsKey(map.SHA1) || !map.SetInfoFromCustomMap())
+                        return;
+
+                    customMapCache.TryAdd(map.SHA1, map);
+                    map.TeamStartMappingPresets.AddRange(GetPresetsForMap(map.Name));
                 }));
             }
 
@@ -218,7 +259,8 @@ namespace DTAClient.Domain.Multiplayer
                 var customMapCache = JsonConvert.DeserializeObject<CustomMapCache>(jsonData);
 
                 var customMaps = customMapCache?.Version == CurrentCustomMapCacheVersion && customMapCache.Maps != null
-                    ? customMapCache.Maps : new ConcurrentDictionary<string, Map>();
+                    ? customMapCache.Maps
+                    : new ConcurrentDictionary<string, Map>();
 
                 foreach (var customMap in customMaps.Values)
                     customMap.CalculateSHA();
@@ -322,6 +364,33 @@ namespace DTAClient.Domain.Multiplayer
                         Logger.Log("AddMapToGameModes: Added map " + map.Name + " to game mode " + gm.Name);
                 }
             }
+        }
+
+        public void AddCustomTeamMappingPreset(Map map, TeamStartMappingPreset preset)
+        {
+            if (!CustomPresets.ContainsKey(map.Name))
+                CustomPresets.Add(map.Name, new List<TeamStartMappingPreset>());
+
+            int existingPresetIndex = CustomPresets[map.Name].FindIndex(p => p.Name == preset.Name);
+            if (existingPresetIndex != -1)
+                CustomPresets[map.Name][existingPresetIndex] = preset;
+            else
+                CustomPresets[map.Name].Add(preset);
+
+            SaveCustomPresets();
+        }
+
+        public void DeleteCustomTeamMappingPreset(Map map, string presetName)
+        {
+            if (!CustomPresets.ContainsKey(map.Name))
+                return;
+
+            var teamMappingPreset = CustomPresets[map.Name].FirstOrDefault(p => p.Name == presetName);
+            if (teamMappingPreset == null)
+                return;
+
+            CustomPresets[map.Name].Remove(teamMappingPreset);
+            SaveCustomPresets();
         }
     }
 }

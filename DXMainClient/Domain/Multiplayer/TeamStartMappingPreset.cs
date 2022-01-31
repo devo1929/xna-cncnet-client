@@ -7,8 +7,16 @@ namespace DTAClient.Domain.Multiplayer
     {
         [JsonProperty("n")]
         public string Name { get; set; }
-        
+
         [JsonProperty("m")]
         public List<TeamStartMapping> TeamStartMappings { get; set; }
+
+        [JsonIgnore]
+        public bool IsUserDefined { get; set; }
+
+        public TeamStartMappingPreset()
+        {
+            TeamStartMappings = new List<TeamStartMapping>();
+        }
     }
 }
