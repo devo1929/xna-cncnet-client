@@ -520,7 +520,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             connectionManager.Disconnected += ConnectionManager_Disconnected;
             connectionManager.PrivateCTCPReceived += ConnectionManager_PrivateCTCPReceived;
 
-            cncnetUserData.UserFriendToggled += RefreshPlayerList;
+            cncnetUserData.UserFriendToggled += UserFriendToggled;
             cncnetUserData.UserIgnoreToggled += RefreshPlayerList;
 
             gameCreationPanel = new DarkeningPanel(WindowManager);
@@ -568,6 +568,12 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
             GameProcessLogic.GameProcessStarted += SharedUILogic_GameProcessStarted;
             GameProcessLogic.GameProcessExited += SharedUILogic_GameProcessExited;
+        }
+
+        private void UserFriendToggled(object sender, UserNameEventArgs userNameEventArgs)
+        {
+            currentChatChannel.Users.Reinsert(userNameEventArgs.UserName);
+            RefreshPlayerList(sender, userNameEventArgs);
         }
 
         /// <summary>
