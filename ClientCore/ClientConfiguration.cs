@@ -261,6 +261,8 @@ namespace ClientCore
 
         public string MPMapsIniPath => SafePath.CombineFilePath(clientDefinitionsIni.GetStringValue(SETTINGS, "MPMapsPath", SafePath.CombineFilePath("INI", "MPMaps.ini")));
 
+        public string QuickMatchPath => clientDefinitionsIni.GetStringValue(SETTINGS, "QuickMatchPath", "INI/QuickMatch.ini");
+
         public string KeyboardINI => clientDefinitionsIni.GetStringValue(SETTINGS, "KeyboardINI", "Keyboard.ini");
 
         public int MinimumIngameWidth => clientDefinitionsIni.GetIntValue(SETTINGS, "MinimumIngameWidth", 640);
