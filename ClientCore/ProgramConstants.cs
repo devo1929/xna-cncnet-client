@@ -14,7 +14,7 @@ namespace ClientCore
     public static class ProgramConstants
     {
 #if DEBUG
-        public static readonly string GamePath = Application.StartupPath.Replace('\\', '/') + "/";
+        public static readonly string GamePath = Environment.CurrentDirectory.Replace('\\', '/') + "/";
 #else
         public static readonly string GamePath = Directory.GetParent(Application.StartupPath.TrimEnd(new char[] { '\\' })).FullName.Replace('\\', '/') + "/";
 #endif
