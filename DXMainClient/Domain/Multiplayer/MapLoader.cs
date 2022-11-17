@@ -21,8 +21,6 @@ namespace DTAClient.Domain.Multiplayer
         private const int CurrentCustomMapCacheVersion = 1;
         private readonly JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions { IncludeFields = true };
 
-        private static MapLoader Instance;
-
         /// <summary>
         /// List of game modes.
         /// </summary>
@@ -47,12 +45,6 @@ namespace DTAClient.Domain.Multiplayer
         /// List of gamemodes allowed to be used on custom maps in order for them to display in map list.
         /// </summary>
         private string[] AllowedGameModes = ClientConfiguration.Instance.AllowedCustomGameModes.Split(',');
-
-        private MapLoader()
-        {
-        }
-
-        public static MapLoader GetInstance() => Instance ?? (Instance = new MapLoader());
 
         /// <summary>
         /// Loads multiplayer map info asynchonously.
