@@ -79,7 +79,7 @@ public class SpawnService
     private static void AddSpawnTunnelSection(QmSpawn spawn, IniFile spawnIni)
     {
         var tunnel = new IniSection("Tunnel");
-        tunnel.SetStringValue("Ip", "52.232.96.199");
+        tunnel.SetStringValue("Ip", "52.232.96.199"); // TODO: this is currently hardcoded FC EU tunnel
         tunnel.SetIntValue("Port", 50001);
         spawnIni.AddSection(tunnel);
     }

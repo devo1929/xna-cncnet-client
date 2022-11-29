@@ -16,11 +16,15 @@ public class ApiService : IDisposable
     private QmHttpClient _httpClient;
     private string token;
 
-    public ApiService()
+    public ApiService(ApiSettingsService apiSettingsService)
     {
-        ApiSettings = ApiSettingsService.GetInstance().GetSettings();
+        ApiSettings = apiSettingsService.GetSettings();
     }
 
+    /// <summary>
+    /// Sets the current auth token to be used for future api requests
+    /// </summary>
+    /// <param name="token">The token to set.</param>
     public void SetToken(string token)
     {
         this.token = token;

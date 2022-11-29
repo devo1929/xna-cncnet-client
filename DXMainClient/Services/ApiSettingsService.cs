@@ -10,8 +10,6 @@ public class ApiSettingsService
     private static readonly string SettingsFile = ClientConfiguration.Instance.ApiIniPath;
     private ApiSettings apiSettings;
 
-    public static ApiSettingsService Instance { get; set; }
-
     private const string UrlsSectionKey = "URLs";
     private const string BaseUrlKey = "Base";
     private const string LoginUrlKey = "Login";
@@ -20,8 +18,6 @@ public class ApiSettingsService
     private const string GetUserAccountsUrlKey = "GetUserAccounts";
     private const string GetLaddersUrlKey = "GetLadders";
     private const string GetLadderMapsUrlKey = "GetLadderMaps";
-
-    public static ApiSettingsService GetInstance() => Instance ??= new ApiSettingsService();
 
     public ApiSettings GetSettings() => apiSettings ??= LoadSettings();
 

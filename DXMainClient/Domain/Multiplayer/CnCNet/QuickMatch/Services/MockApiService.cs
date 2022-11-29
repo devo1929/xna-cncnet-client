@@ -12,6 +12,10 @@ namespace DTAClient.Domain.Multiplayer.CnCNet.QuickMatch.Services;
 
 public class MockApiService : ApiService
 {
+    public MockApiService(ApiSettingsService apiSettingsService) : base(apiSettingsService)
+    {
+    }
+
     public override async Task<QmResponse<IEnumerable<QmLadderMap>>> LoadLadderMapsForAbbrAsync(string ladderAbbreviation) => LoadMockData<QmResponse<IEnumerable<QmLadderMap>>>($"qm_ladder_maps_{ladderAbbreviation}_response.json");
 
     public override async Task<QmResponse<QmLadderStats>> LoadLadderStatsForAbbrAsync(string ladderAbbreviation) => LoadMockData<QmResponse<QmLadderStats>>("qm_ladder_stats_response.json");

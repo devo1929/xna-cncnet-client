@@ -213,6 +213,7 @@ namespace DTAClient.DXGUI
                             .AddSingleton<PrivateMessageHandler>()
                             .AddSingleton<MapLoader>()
                             .AddSingleton<ApiService>()
+                            .AddSingleton<ApiSettingsService>()
                             .AddSingleton<SpawnService>()
                             .AddSingleton<QmService>()
                             .AddSingleton<QmSettingsService>()
