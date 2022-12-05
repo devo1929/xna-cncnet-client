@@ -2,4 +2,7 @@
   <PropertyGroup Condition="'$(PlatformTarget)' == 'x86'">
     <RunCommand>$(MSBuildProgramFiles32)\dotnet\dotnet</RunCommand> <!-- Support WindowsXNA 32bit debugging in VS -->
   </PropertyGroup>
+  <Target Name="CustomRestore" BeforeTargets="BeforeBuild">
+    <Exec Command="dotnet restore -p:Engine=$(Engine)" />
+  </Target>
 </Project>

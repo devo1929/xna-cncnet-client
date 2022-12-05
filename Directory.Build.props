@@ -9,16 +9,17 @@
     <AnalysisModeDocumentation Condition="!$(Configuration.Contains(Debug))">None</AnalysisModeDocumentation>
     <AnalysisModeNaming Condition="!$(Configuration.Contains(Debug))">None</AnalysisModeNaming>
     <AnalysisModeStyle Condition="!$(Configuration.Contains(Debug))">None</AnalysisModeStyle>
+    <BuildingInIDE Condition="'$(BuildingInsideVisualStudio)' == 'True' OR '$(BuildingByReSharper)' == 'True'">True</BuildingInIDE>
   </PropertyGroup>
 
-  <Import Project="$(MSBuildThisFileDirectory)build\VSCompatibleLayer.props" Condition="'$(BuildingInsideVisualStudio)' == 'True'" />
+  <Import Project="$(MSBuildThisFileDirectory)build\VSCompatibleLayer.props" Condition="'$(BuildingInIDE)' == 'True'" />
   <Import Project="$(MSBuildThisFileDirectory)build\Framework.props" />
 
   <!-- Allow a game specific build prop file to be imported, if available -->
   <Import Project="$(MSBuildThisFileDirectory)Directory.Build.Game.$(Game).props" Condition="Exists('$(MSBuildThisFileDirectory)Directory.Build.Game.$(Game).props')"/>
 
   <!-- Visual Studio -->
-  <PropertyGroup Condition="'$(BuildingInsideVisualStudio)' == 'True'">
+  <PropertyGroup Condition="'$(BuildingInIDE)' == 'True'">
     <OutputPath Condition="'$(_OutputConfiguration)' != ''">$(BaseOutputPath)bin\$(_OutputConfiguration)\$(Game)\$(Engine)\</OutputPath>
     <IntermediateOutputPath Condition="'$(_OutputConfiguration)' != ''">$(BaseIntermediateOutputPath)obj\$(_OutputConfiguration)\$(Game)\$(Engine)\</IntermediateOutputPath>
   </PropertyGroup>

@@ -21,6 +21,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <UseAppHost>false</UseAppHost>
+    <PackageId>devo1929.$(Company).DXMainClient.$(Game)</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Resources\**" />

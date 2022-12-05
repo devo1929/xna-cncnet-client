@@ -12,6 +12,7 @@
     <InformationalVersion>1.0.0.0</InformationalVersion>
     <AssemblyName>Localization</AssemblyName>
     <RootNamespace>Localization</RootNamespace>
+    <PackageId>devo1929.$(Company).$(AssemblyName).$(Game)</PackageId>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="GitVersion.MsBuild" Version="5.11.1">

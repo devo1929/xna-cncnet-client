@@ -11,6 +11,7 @@
     <InformationalVersion>2.1.0.1</InformationalVersion>
     <AssemblyName>ClientGUI</AssemblyName>
     <RootNamespace>ClientGUI</RootNamespace>
+    <PackageId>devo1929.$(Company).$(AssemblyName).$(Game)</PackageId>
   </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\build\WinForms.props" />
   <ItemGroup>

@@ -11,6 +11,7 @@
     <InformationalVersion>2.2.0.0</InformationalVersion>
     <AssemblyName>DTAConfig</AssemblyName>
     <RootNamespace>DTAConfig</RootNamespace>
+    <PackageId>devo1929.$(Company).$(AssemblyName).$(Game)</PackageId>
   </PropertyGroup>
   <Import Project="$(MSBuildThisFileDirectory)..\build\WinForms.props" />
   <ItemGroup>
