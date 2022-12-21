@@ -20,7 +20,7 @@ namespace DTAClient.Online
     /// <summary>
     /// The CnCNet connection handler.
     /// </summary>
-    internal sealed class Connection
+    public sealed class Connection
     {
         private const int MAX_RECONNECT_COUNT = 8;
         private const int RECONNECT_WAIT_DELAY = 4000;

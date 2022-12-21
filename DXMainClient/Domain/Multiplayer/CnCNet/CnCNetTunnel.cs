@@ -13,7 +13,7 @@ namespace DTAClient.Domain.Multiplayer.CnCNet
     /// <summary>
     /// A CnCNet tunnel server.
     /// </summary>
-    internal sealed class CnCNetTunnel
+    public sealed class CnCNetTunnel
     {
         private const int PING_PACKET_SEND_SIZE = 50;
         private const int PING_TIMEOUT = 1000;

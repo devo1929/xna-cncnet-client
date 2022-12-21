@@ -13,7 +13,7 @@ using Rampastring.XNAUI;
 
 namespace DTAClient.Domain.Multiplayer.CnCNet
 {
-    internal sealed class TunnelHandler : GameComponent
+    public sealed class TunnelHandler : GameComponent
     {
         /// <summary>
         /// Determines the time between pinging the current tunnel (if it's set).

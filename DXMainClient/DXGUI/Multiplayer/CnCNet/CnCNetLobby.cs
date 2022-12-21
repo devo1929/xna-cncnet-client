@@ -194,10 +194,8 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             lbGameList = new GameListBox(WindowManager, localGameID, HostedGameMatches);
             lbGameList.Name = nameof(lbGameList);
             lbGameList.ClientRectangle = gameListRectangle;
-            lbGameList.PanelBackgroundDrawMode = PanelBackgroundImageDrawMode.STRETCHED;
             lbGameList.BackgroundTexture = AssetLoader.CreateTexture(new Color(0, 0, 0, 128), 1, 1);
             lbGameList.DoubleLeftClick += (_, _) => JoinSelectedGameAsync().HandleTask();
-            lbGameList.AllowMultiLineItems = false;
             lbGameList.ClientRectangleUpdated += GameList_ClientRectangleUpdated;
 
             lbPlayerList = new PlayerListBox(WindowManager, gameCollection);

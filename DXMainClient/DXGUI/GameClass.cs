@@ -15,6 +15,7 @@ using DTAClient.Domain.Multiplayer.CnCNet;
 using DTAClient.DXGUI.Multiplayer;
 using DTAClient.DXGUI.Multiplayer.CnCNet;
 using DTAClient.DXGUI.Multiplayer.GameLobby;
+using DTAClient.DXGUI.Services;
 using DTAClient.Online;
 using DTAConfig;
 using DTAConfig.Settings;
@@ -200,7 +201,9 @@ namespace DTAClient.DXGUI
                             .AddSingleton<TunnelHandler>()
                             .AddSingleton<DiscordHandler>()
                             .AddSingleton<PrivateMessageHandler>()
-                            .AddSingleton<MapLoader>();
+                            .AddSingleton<MapLoader>()
+                            .AddSingleton<CnCNetClientService>()
+                            .AddSingleton<CnCNetLobbyService>();
 
                         // singleton xna controls - same instance on each request
                         services
@@ -213,6 +216,15 @@ namespace DTAClient.DXGUI
                             .AddSingletonXnaControl<CnCNetGameLobby>()
                             .AddSingletonXnaControl<CnCNetGameLoadingLobby>()
                             .AddSingletonXnaControl<CnCNetLobby>()
+                            .AddSingletonXnaControl<CnCNetLobby2>()
+                            .AddSingletonXnaControl<GameListBox2>()
+                            .AddSingletonXnaControl<PlayerListBox2>()
+                            .AddSingletonXnaControl<ChatListBox2>()
+                            .AddSingletonXnaControl<PasswordRequestWindow2>()
+                            .AddSingletonXnaControl<GlobalContextMenu2>()
+                            .AddSingletonXnaControl<GameFiltersPanel>()
+                            .AddSingletonXnaControl<GameCreationWindow>()
+                            .AddSingletonXnaControl<GlobalContextMenu>()
                             .AddSingletonXnaControl<GameInProgressWindow>()
                             .AddSingletonXnaControl<SkirmishLobby>()
                             .AddSingletonXnaControl<MainMenu>()

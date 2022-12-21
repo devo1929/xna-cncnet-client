@@ -1,4 +1,5 @@
 ﻿using DTAClient.Online;
+using Rampastring.XNAUI.XNAControls;
 
 namespace DTAClient.DXGUI.Multiplayer.CnCNet
 {
@@ -35,5 +36,10 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
         /// Prevent the Join option from showing in the menu.
         /// </summary>
         public bool PreventJoinGame { get; set; }
+        
+        /// <summary>
+        /// The parent control where the right-click took place
+        /// </summary>
+        public XNAControl ParentControl { get; set; }
     }
 }

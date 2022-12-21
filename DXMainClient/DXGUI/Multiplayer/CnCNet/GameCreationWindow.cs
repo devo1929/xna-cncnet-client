@@ -14,14 +14,14 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
     /// <summary>
     /// A window that allows the user to host a new game on CnCNet.
     /// </summary>
-    class GameCreationWindow : XNAWindow
+    public class GameCreationWindow : XNAWindow
     {
         public GameCreationWindow(WindowManager windowManager, TunnelHandler tunnelHandler)
             : base(windowManager)
         {
             this.tunnelHandler = tunnelHandler;
         }
-
+        //
         public event EventHandler Cancelled;
         public event EventHandler<GameCreationEventArgs> GameCreated;
         public event EventHandler<GameCreationEventArgs> LoadedGameCreated;
@@ -185,7 +185,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
         private void BtnCancel_LeftClick(object sender, EventArgs e)
         {
-            Cancelled?.Invoke(this, EventArgs.Empty);
+            // Cancelled?.Invoke(this, EventArgs.Empty);
         }
 
         private void BtnLoadMPGame_LeftClick(object sender, EventArgs e)
@@ -205,7 +205,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
                 spawnSGIni.GetIntValue("Settings", "PlayerCount", 2), password,
                 tunnelHandler.Tunnels[lbTunnelList.SelectedIndex]);
 
-            LoadedGameCreated?.Invoke(this, ea);
+            // LoadedGameCreated?.Invoke(this, ea);
         }
 
         private void BtnCreateGame_LeftClick(object sender, EventArgs e)
@@ -229,9 +229,9 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
                 return;
             }
 
-            GameCreated?.Invoke(this, new GameCreationEventArgs(gameName,
-                int.Parse(ddMaxPlayers.SelectedItem.Text), tbPassword.Text,
-                tunnelHandler.Tunnels[lbTunnelList.SelectedIndex]));
+            // GameCreated?.Invoke(this, new GameCreationEventArgs(gameName,
+            //     int.Parse(ddMaxPlayers.SelectedItem.Text), tbPassword.Text,
+            //     tunnelHandler.Tunnels[lbTunnelList.SelectedIndex]));
         }
 
         private void BtnDisplayAdvancedOptions_LeftClick(object sender, EventArgs e)

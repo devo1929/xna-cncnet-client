@@ -44,7 +44,7 @@ namespace DTAClient.DXGUI.Generic
             LANLobby lanLobby,
             TopBar topBar,
             OptionsWindow optionsWindow,
-            CnCNetLobby cncnetLobby,
+            CnCNetLobby2 cncnetLobby,
             CnCNetManager connectionManager,
             DiscordHandler discordHandler,
             CnCNetGameLoadingLobby cnCNetGameLoadingLobby,
@@ -66,7 +66,7 @@ namespace DTAClient.DXGUI.Generic
             this.privateMessagingPanel = privateMessagingPanel;
             this.privateMessagingWindow = privateMessagingWindow;
             this.gameInProgressWindow = gameInProgressWindow;
-            this.cncnetLobby.UpdateCheck += CncnetLobby_UpdateCheck;
+            // this.cncnetLobby.UpdateCheck += CncnetLobby_UpdateCheck;
             isMediaPlayerAvailable = IsMediaPlayerAvailable();
         }
 
@@ -76,7 +76,7 @@ namespace DTAClient.DXGUI.Generic
         private XNALinkLabel lblUpdateStatus;
         private XNALinkLabel lblVersion;
 
-        private CnCNetLobby cncnetLobby;
+        private CnCNetLobby2 cncnetLobby;
 
         private SkirmishLobby skirmishLobby;
 

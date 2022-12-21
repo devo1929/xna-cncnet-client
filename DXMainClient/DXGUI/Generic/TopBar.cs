@@ -12,6 +12,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClientCore.Extensions;
 using DTAClient.Domain.Multiplayer.CnCNet;
+using DTAClient.DXGUI.Services;
+using DTAClient.Enums;
 using DTAClient.Online.EventArguments;
 using DTAConfig;
 using Localization;
@@ -40,12 +42,14 @@ namespace DTAClient.DXGUI.Generic
         public TopBar(
             WindowManager windowManager,
             CnCNetManager connectionManager,
-            PrivateMessageHandler privateMessageHandler
+            PrivateMessageHandler privateMessageHandler,
+            CnCNetLobbyService cncnetLobbyService
         ) : base(windowManager)
         {
             downTimeWaitTime = TimeSpan.FromSeconds(DOWN_TIME_WAIT_SECONDS);
             this.connectionManager = connectionManager;
             this.privateMessageHandler = privateMessageHandler;
+            this.cncnetLobbyService = cncnetLobbyService;
         }
 
         public SwitchType LastSwitchType { get; private set; }
@@ -69,6 +73,7 @@ namespace DTAClient.DXGUI.Generic
 
         private CnCNetManager connectionManager;
         private readonly PrivateMessageHandler privateMessageHandler;
+        private readonly CnCNetLobbyService cncnetLobbyService;
 
         private CancellationTokenSource cncnetPlayerCountCancellationSource;
         private static readonly object locker = new object();
@@ -228,6 +233,23 @@ namespace DTAClient.DXGUI.Generic
             connectionManager.ConnectAttemptFailed += ConnectionManager_ConnectAttemptFailed;
 
             privateMessageHandler.UnreadMessageCountUpdated += PrivateMessageHandler_UnreadMessageCountUpdated;
+
+            cncnetLobbyService.GetSourcePanel().Subscribe(SourcePanelUpdated);
+        }
+
+        private void SourcePanelUpdated(SourcePanelEnum sourcePanel)
+        {
+            switch (sourcePanel)
+            {
+                case SourcePanelEnum.Primary:
+                    SwitchToPrimary();
+                    return;
+                case SourcePanelEnum.Secondary:
+                    SwitchToSecondary();
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(sourcePanel), sourcePanel, $"Invalid source panel specified! {sourcePanel}");
+            }
         }
 
         private void PrivateMessageHandler_UnreadMessageCountUpdated(object sender, UnreadMessageCountEventArgs args)

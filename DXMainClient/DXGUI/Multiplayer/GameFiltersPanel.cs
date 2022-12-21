@@ -1,6 +1,7 @@
 ﻿using System;
 using ClientCore;
 using ClientGUI;
+using DTAClient.DXGUI.ViewModels;
 using Localization;
 using Microsoft.Xna.Framework;
 using Rampastring.XNAUI;
@@ -26,6 +27,7 @@ namespace DTAClient.DXGUI.Multiplayer
         public override void Initialize()
         {
             base.Initialize();
+            Disable();
 
             Name = "GameFiltersWindow";
             BackgroundTexture = AssetLoader.CreateTexture(new Color(0, 0, 0), Width, Height);
@@ -165,6 +167,27 @@ namespace DTAClient.DXGUI.Multiplayer
             chkBoxHidePasswordedGames.Checked = userIniSettings.HidePasswordedGames.Value;
             chkBoxHideIncompatibleGames.Checked = userIniSettings.HideIncompatibleGames.Value;
             ddMaxPlayerCount.SelectedIndex = ddMaxPlayerCount.Items.FindIndex(i => i.Text == userIniSettings.MaxPlayerCount.Value.ToString());
+        }
+
+        public CnCNetLobbyGameFilterViewModel GetFiltersViewModel()
+        {
+            return new CnCNetLobbyGameFilterViewModel
+            {
+                IsShowFriendGamesOnly = chkBoxFriendsOnly.Checked,
+                IsHideLockedGames = chkBoxHideLockedGames.Checked,
+                IsHidePasswordedGames = chkBoxHidePasswordedGames.Checked,
+                IsHideIncompatibleGames = chkBoxHideIncompatibleGames.Checked,
+                MaxPlayerCount = int.Parse(ddMaxPlayerCount.SelectedItem.Text)
+            };
+        }
+
+        public void SetFiltersViewModel(CnCNetLobbyGameFilterViewModel filtersViewModel)
+        {
+            chkBoxFriendsOnly.Checked = filtersViewModel.IsShowFriendGamesOnly;
+            chkBoxHideLockedGames.Checked = filtersViewModel.IsHideLockedGames;
+            chkBoxHidePasswordedGames.Checked = filtersViewModel.IsHidePasswordedGames;
+            chkBoxHideIncompatibleGames.Checked = filtersViewModel.IsHideIncompatibleGames;
+            ddMaxPlayerCount.SelectedIndex = ddMaxPlayerCount.Items.FindIndex(i => i.Text == filtersViewModel.MaxPlayerCount.ToString());
         }
 
         private void ResetDefaults()

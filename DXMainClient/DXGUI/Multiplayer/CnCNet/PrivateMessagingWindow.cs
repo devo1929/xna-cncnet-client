@@ -23,7 +23,7 @@ using Rectangle = Microsoft.Xna.Framework.Rectangle;
 
 namespace DTAClient.DXGUI.Multiplayer.CnCNet
 {
-    internal sealed class PrivateMessagingWindow : XNAWindow, ISwitchable
+    public sealed class PrivateMessagingWindow : XNAWindow, ISwitchable
     {
         private const int MESSAGES_INDEX = 0;
         private const int FRIEND_LIST_VIEW_INDEX = 1;

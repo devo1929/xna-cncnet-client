@@ -172,7 +172,6 @@ namespace DTAClient.DXGUI.Generic
             lbGameList.Name = nameof(lbGameList);
             lbGameList.ClientRectangle = new Rectangle(2, 25, 676, 250);
             lbGameList.BackgroundTexture = AssetLoader.CreateTexture(new Color(0, 0, 0, 128), 1, 1);
-            lbGameList.PanelBackgroundDrawMode = PanelBackgroundImageDrawMode.STRETCHED;
             lbGameList.AddColumn("DATE / TIME".L10N("UI:Main:GameMatchDateTimeColumnHeader"), 130);
             lbGameList.AddColumn("MAP".L10N("UI:Main:GameMatchMapColumnHeader"), 200);
             lbGameList.AddColumn("GAME MODE".L10N("UI:Main:GameMatchGameModeColumnHeader"), 130);

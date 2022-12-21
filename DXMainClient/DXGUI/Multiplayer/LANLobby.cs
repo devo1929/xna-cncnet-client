@@ -115,10 +115,8 @@ namespace DTAClient.DXGUI.Multiplayer
                 41, btnJoinGame.Right - btnNewGame.X,
                 btnNewGame.Y - 53);
             lbGameList.GameLifetime = 15.0; // Smaller lifetime in LAN
-            lbGameList.PanelBackgroundDrawMode = PanelBackgroundImageDrawMode.STRETCHED;
             lbGameList.BackgroundTexture = AssetLoader.CreateTexture(new Color(0, 0, 0, 128), 1, 1);
             lbGameList.DoubleLeftClick += (_, _) => JoinGameAsync().HandleTask();
-            lbGameList.AllowMultiLineItems = false;
 
             lbPlayerList = new XNAListBox(WindowManager);
             lbPlayerList.Name = "lbPlayerList";
