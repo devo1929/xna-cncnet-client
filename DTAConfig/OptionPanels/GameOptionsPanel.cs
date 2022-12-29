@@ -10,7 +10,7 @@ using System;
 
 namespace DTAConfig.OptionPanels
 {
-    class GameOptionsPanel : XNAOptionsPanel
+    public class GameOptionsPanel : XNAOptionsPanel
     {
 
 #if TS

@@ -10,7 +10,7 @@ namespace DTAConfig
     /// <summary>
     /// A DirectDraw wrapper option.
     /// </summary>
-    class DirectDrawWrapper
+    public class DirectDrawWrapper
     {
         /// <summary>
         /// Creates a new DirectDrawWrapper instance and parses its configuration

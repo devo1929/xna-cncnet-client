@@ -1,11 +1,13 @@
-﻿using Microsoft.Xna.Framework.Graphics;
+﻿using System;
+using System.Globalization;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace ClientCore.CnCNet5
 {
     /// <summary>
     /// A class for games supported on CnCNet (DTA, TI, TS, RA1/2, etc.)
     /// </summary>
-    public class CnCNetGame
+    public class CnCNetGame : IEquatable<CnCNetGame>, IEquatable<string>
     {
         /// <summary>
         /// The name of the game that is displayed on the user-interface.
@@ -55,5 +57,11 @@ namespace ClientCore.CnCNet5
         /// If true, the client should always be connected to this game's chat channel.
         /// </summary>
         public bool AlwaysEnabled { get; set; }
+
+        public bool Equals(CnCNetGame other)
+            => Equals(other?.InternalName);
+
+        public bool Equals(string otherInternalName)
+            => InternalName!= null && InternalName.ToUpper(CultureInfo.InvariantCulture) == otherInternalName?.ToUpper(CultureInfo.InvariantCulture);
     }
 }

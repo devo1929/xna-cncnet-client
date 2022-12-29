@@ -21,7 +21,7 @@ using System.Runtime.Versioning;
 
 namespace DTAConfig.OptionPanels
 {
-    class DisplayOptionsPanel : XNAOptionsPanel
+    public class DisplayOptionsPanel : XNAOptionsPanel
     {
         private const int DRAG_DISTANCE_DEFAULT = 4;
         private const int ORIGINAL_RESOLUTION_WIDTH = 640;

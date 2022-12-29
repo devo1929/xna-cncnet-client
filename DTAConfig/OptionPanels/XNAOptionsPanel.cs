@@ -14,7 +14,7 @@ namespace DTAConfig.OptionPanels
     /// Handles custom game-specific panel options
     /// defined in INI files.
     /// </summary>
-    internal abstract class XNAOptionsPanel : XNAWindowBase
+    public abstract class XNAOptionsPanel : XNAWindowBase
     {
         public XNAOptionsPanel(WindowManager windowManager, 
             UserINISettings iniSettings) : base(windowManager)

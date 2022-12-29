@@ -13,7 +13,7 @@ using ClientCore.Extensions;
 
 namespace DTAConfig.OptionPanels
 {
-    class CnCNetOptionsPanel : XNAOptionsPanel
+    public class CnCNetOptionsPanel : XNAOptionsPanel
     {
         public CnCNetOptionsPanel(WindowManager windowManager, UserINISettings iniSettings,
             GameCollection gameCollection)

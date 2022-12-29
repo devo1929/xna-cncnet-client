@@ -9,7 +9,7 @@ using Localization;
 
 namespace DTAClient.Online
 {
-    internal sealed class Channel : IMessageView
+    public sealed class Channel : IMessageView
     {
         const int MESSAGE_LIMIT = 1024;
 

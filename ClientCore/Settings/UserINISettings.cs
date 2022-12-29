@@ -17,11 +17,11 @@ namespace ClientCore
         public const string COMPATIBILITY = "Compatibility";
         public const string GAME_FILTERS = "GameFilters";
 
-        private const bool DEFAULT_SHOW_FRIENDS_ONLY_GAMES = false;
-        private const bool DEFAULT_HIDE_LOCKED_GAMES = false;
-        private const bool DEFAULT_HIDE_PASSWORDED_GAMES = false;
-        private const bool DEFAULT_HIDE_INCOMPATIBLE_GAMES = false;
-        private const int DEFAULT_MAX_PLAYER_COUNT = 8;
+        public const bool DEFAULT_SHOW_FRIENDS_ONLY_GAMES = false;
+        public const bool DEFAULT_HIDE_LOCKED_GAMES = false;
+        public const bool DEFAULT_HIDE_PASSWORDED_GAMES = false;
+        public const bool DEFAULT_HIDE_INCOMPATIBLE_GAMES = false;
+        public const int DEFAULT_MAX_PLAYER_COUNT = 8;
 
         public static UserINISettings Instance
         {

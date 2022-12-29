@@ -9,7 +9,7 @@ using ClientUpdater;
 
 namespace DTAConfig.OptionPanels
 {
-    class UpdaterOptionsPanel : XNAOptionsPanel
+    public class UpdaterOptionsPanel : XNAOptionsPanel
     {
         public UpdaterOptionsPanel(WindowManager windowManager, UserINISettings iniSettings)
             : base(windowManager, iniSettings)

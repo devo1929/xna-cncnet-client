@@ -3,7 +3,7 @@ using Rampastring.XNAUI.XNAControls;
 
 namespace DTAClient.DXGUI.Multiplayer.CnCNet
 {
-    public class GlobalContextMenuData
+    public class GlobalContextMenuData2
     {
         /// <summary>
         /// The ChannelUser to show the menu for.

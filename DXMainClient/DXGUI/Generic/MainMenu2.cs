@@ -23,6 +23,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClientCore.Extensions;
 using ClientUpdater;
+using DTAClient.DXGUI.Services;
+using DTAClient.DXGUI.ViewModels;
 using DTAClient.Enums;
 
 namespace DTAClient.DXGUI.Generic
@@ -30,7 +32,7 @@ namespace DTAClient.DXGUI.Generic
     /// <summary>
     /// The main menu of the client.
     /// </summary>
-    class MainMenu : XNAWindow, ISwitchable
+    class MainMenu2 : XNAWindow, ISwitchable
     {
         private const float MEDIA_PLAYER_VOLUME_FADE_STEP = 0.01f;
         private const float MEDIA_PLAYER_VOLUME_EXIT_FADE_STEP = 0.025f;
@@ -39,12 +41,13 @@ namespace DTAClient.DXGUI.Generic
         /// <summary>
         /// Creates a new instance of the main menu.
         /// </summary>
-        public MainMenu(
+        public MainMenu2(
             WindowManager windowManager,
             SkirmishLobby skirmishLobby,
             LANLobby lanLobby,
             TopBar topBar,
             OptionsWindow optionsWindow,
+            CnCNetClientService cncnetClientService,
             CnCNetLobby2 cncnetLobby,
             CnCNetManager connectionManager,
             DiscordHandler discordHandler,
@@ -59,6 +62,7 @@ namespace DTAClient.DXGUI.Generic
             this.topBar = topBar;
             this.connectionManager = connectionManager;
             this.optionsWindow = optionsWindow;
+            this.cncnetClientService = cncnetClientService;
             this.cncnetLobby = cncnetLobby;
             this.discordHandler = discordHandler;
             this.skirmishLobby = skirmishLobby;
@@ -86,6 +90,7 @@ namespace DTAClient.DXGUI.Generic
         private CnCNetManager connectionManager;
 
         private OptionsWindow optionsWindow;
+        private readonly CnCNetClientService cncnetClientService;
 
         private DiscordHandler discordHandler;
 
@@ -99,17 +104,17 @@ namespace DTAClient.DXGUI.Generic
         private XNAMessageBox firstRunMessageBox;
 
         private bool _updateInProgress;
-        private bool UpdateInProgress
-        {
-            get { return _updateInProgress; }
-            set
-            {
-                _updateInProgress = value;
-                topBar.SetSwitchButtonsClickable(!_updateInProgress);
-                topBar.SetOptionsButtonClickable(!_updateInProgress);
-                SetButtonHotkeys(!_updateInProgress);
-            }
-        }
+        // private bool UpdateInProgress
+        // {
+        //     get { return _updateInProgress; }
+        //     set
+        //     {
+        //         _updateInProgress = value;
+        //         topBar.SetSwitchButtonsClickable(!_updateInProgress);
+        //         topBar.SetOptionsButtonClickable(!_updateInProgress);
+        //         SetButtonHotkeys(!_updateInProgress);
+        //     }
+        // }
 
         private bool customComponentDialogQueued = false;
 
@@ -137,12 +142,13 @@ namespace DTAClient.DXGUI.Generic
         private XNAClientButton btnCredits;
         private XNAClientButton btnExtras;
 
+        private CnCNetClientViewModel viewModel;
+
         /// <summary>
         /// Initializes the main menu's controls.
         /// </summary>
         public override void Initialize()
         {
-            topBar.SetSecondarySwitch(cncnetLobby);
             GameProcessLogic.GameProcessExited += SharedUILogic_GameProcessExited;
 
             Name = nameof(MainMenu);
@@ -311,12 +317,30 @@ namespace DTAClient.DXGUI.Generic
 
             optionsWindow.OnForceUpdate += (s, e) => ForceUpdate();
 
-            GameProcessLogic.GameProcessStarted += SharedUILogic_GameProcessStarted;
-            GameProcessLogic.GameProcessStarting += SharedUILogic_GameProcessStarting;
             UserINISettings.Instance.SettingsSaved += SettingsSaved;
             Updater.Restart += (_, _) => WindowManager.AddCallback(() => ExitClientAsync().HandleTask());
 
             SetButtonHotkeys(true);
+
+            GameProcessLogic.GameProcessStarted += SharedUILogic_GameProcessStarted;
+            cncnetClientService.GetViewModel().Subscribe(ViewModelUpdated);
+            cncnetClientService.SetSecondarySwitch(cncnetLobby);
+        }
+
+        private void ViewModelUpdated(CnCNetClientViewModel viewModel)
+        {
+            this.viewModel = viewModel;
+            RefreshForGameProcessState(viewModel.GameProcessState);
+        }
+
+        private void RefreshForGameProcessState(GameProcessStateEnum gameProcessState)
+        {
+            switch (gameProcessState)
+            {
+                case GameProcessStateEnum.Started:
+                    MusicOff();
+                    return;
+            }
         }
 
         private void SetButtonHotkeys(bool enableHotkeys)
@@ -358,23 +382,6 @@ namespace DTAClient.DXGUI.Generic
             {
                 if (customComponentDialogQueued)
                     Updater_OnCustomComponentsOutdated();
-            }
-        }
-
-        /// <summary>
-        /// Refreshes settings. Called when the game process is starting.
-        /// </summary>
-        private void SharedUILogic_GameProcessStarting()
-        {
-            UserINISettings.Instance.ReloadSettings();
-
-            try
-            {
-                optionsWindow.RefreshSettings();
-            }
-            catch (Exception ex)
-            {
-                ProgramConstants.LogException(ex, "Refreshing settings failed!");
             }
         }
 
@@ -527,7 +534,7 @@ namespace DTAClient.DXGUI.Generic
 
             if (cncnetPlayerCountCancellationSource != null) cncnetPlayerCountCancellationSource.Cancel();
             topBar.Clean();
-            if (UpdateInProgress)
+            if (viewModel.IsUpdateInProgress)
                 Updater.StopUpdate();
 
             if (connectionManager.IsConnected)
@@ -550,8 +557,6 @@ namespace DTAClient.DXGUI.Generic
             DarkeningPanel.AddAndInitializeWithControl(WindowManager, optionsWindow);
             WindowManager.AddAndInitializeControl(privateMessagingPanel);
             privateMessagingPanel.AddChild(privateMessagingWindow);
-            topBar.SetTertiarySwitch(privateMessagingWindow);
-            topBar.SetOptionsWindow(optionsWindow);
             WindowManager.AddAndInitializeControl(gameInProgressWindow);
 
             skirmishLobby.Disable();
@@ -563,7 +568,9 @@ namespace DTAClient.DXGUI.Generic
             optionsWindow.Disable();
 
             WindowManager.AddAndInitializeControl(topBar);
-            topBar.AddPrimarySwitchable(this);
+            
+            cncnetClientService.AddPrimarySwitchable(this);
+            cncnetClientService.SetTertiarySwitch(privateMessagingWindow);
 
             SwitchMainMenuMusicFormat();
 
@@ -629,7 +636,7 @@ namespace DTAClient.DXGUI.Generic
             lblUpdateStatus.Text = "Updating failed! Click to retry.".L10N("UI:Main:UpdateFailedClickToRetry");
             lblUpdateStatus.DrawUnderline = true;
             lblUpdateStatus.Enabled = true;
-            UpdateInProgress = false;
+            cncnetClientService.SetUpdateInProgress(false);
 
             innerPanel.Show(null); // Darkening
             XNAMessageBox msgBox = new XNAMessageBox(WindowManager, "Update failed".L10N("UI:Main:UpdateFailedTitle"),
@@ -654,7 +661,7 @@ namespace DTAClient.DXGUI.Generic
             lblUpdateStatus.Text = "The update was cancelled. Click to retry.".L10N("UI:Main:UpdateCancelledClickToRetry");
             lblUpdateStatus.DrawUnderline = true;
             lblUpdateStatus.Enabled = true;
-            UpdateInProgress = false;
+            cncnetClientService.SetUpdateInProgress(false);
         }
 
         private void UpdateWindow_UpdateCompleted(object sender, EventArgs e)
@@ -663,7 +670,7 @@ namespace DTAClient.DXGUI.Generic
             lblUpdateStatus.Text = string.Format("{0} was succesfully updated to v.{1}".L10N("UI:Main:UpdateSuccess"),
                 ProgramConstants.GAME_NAME_SHORT, Updater.GameVersion);
             lblVersion.Text = Updater.GameVersion;
-            UpdateInProgress = false;
+            cncnetClientService.SetUpdateInProgress(false);
             lblUpdateStatus.Enabled = true;
             lblUpdateStatus.DrawUnderline = false;
         }
@@ -688,7 +695,7 @@ namespace DTAClient.DXGUI.Generic
 
         private void ForceUpdate()
         {
-            UpdateInProgress = true;
+            cncnetClientService.SetUpdateInProgress(true);
             innerPanel.Hide();
             innerPanel.UpdateWindow.ForceUpdate();
             innerPanel.Show(innerPanel.UpdateWindow);
@@ -718,10 +725,8 @@ namespace DTAClient.DXGUI.Generic
         /// </summary>
         private void HandleFileIdentifierUpdate()
         {
-            if (UpdateInProgress)
-            {
+            if (viewModel.IsUpdateInProgress)
                 return;
-            }
 
             if (Updater.VersionState == VersionState.UPTODATE)
             {
@@ -763,7 +768,7 @@ namespace DTAClient.DXGUI.Generic
             if (innerPanel.UpdateQueryWindow.Visible)
                 return;
 
-            if (UpdateInProgress)
+            if (viewModel.IsUpdateInProgress)
                 return;
 
             if ((firstRunMessageBox != null && firstRunMessageBox.Visible) || optionsWindow.Enabled)
@@ -810,7 +815,7 @@ namespace DTAClient.DXGUI.Generic
             innerPanel.UpdateWindow.SetData(Updater.ServerGameVersion);
             innerPanel.Show(innerPanel.UpdateWindow);
             lblUpdateStatus.Text = "Updating...".L10N("UI:Main:Updating");
-            UpdateInProgress = true;
+            cncnetClientService.SetUpdateInProgress(true);
             Updater.StartUpdate();
         }
 

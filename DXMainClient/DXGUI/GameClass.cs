@@ -16,6 +16,7 @@ using DTAClient.Domain.Multiplayer.CnCNet;
 using DTAClient.DXGUI.Multiplayer;
 using DTAClient.DXGUI.Multiplayer.CnCNet;
 using DTAClient.DXGUI.Multiplayer.GameLobby;
+using DTAClient.DXGUI.Services;
 using DTAClient.Online;
 using DTAConfig;
 using DTAConfig.Settings;
@@ -181,7 +182,7 @@ namespace DTAClient.DXGUI
 
             cncNetUserData.InitializeAsync().HandleTask();
 
-            LoadingScreen ls = serviceProvider.GetService<LoadingScreen>();
+            LoadingScreen2 ls = serviceProvider.GetService<LoadingScreen2>();
 
             wm.AddAndInitializeControl(ls);
 
@@ -206,22 +207,40 @@ namespace DTAClient.DXGUI
                             .AddSingleton<TunnelHandler>()
                             .AddSingleton<DiscordHandler>()
                             .AddSingleton<PrivateMessageHandler>()
-                            .AddSingleton<MapLoader>();
+                            .AddSingleton<MapLoader>()
+                            .AddSingleton<CnCNetClientService>()
+                            .AddSingleton<CnCNetLobbyService>();
 
                         // singleton xna controls - same instance on each request
                         services
-                            .AddSingletonXnaControl<LoadingScreen>()
+                            .AddSingletonXnaControl<LoadingScreen2>()
                             .AddSingletonXnaControl<TopBar>()
+                            .AddSingletonXnaControl<TopBar2>()
                             .AddSingletonXnaControl<OptionsWindow>()
+                            .AddSingletonXnaControl<OptionsWindow2>()
                             .AddSingletonXnaControl<PrivateMessagingWindow>()
+                            .AddSingletonXnaControl<PrivateMessagingWindow2>()
                             .AddSingletonXnaControl<PrivateMessagingPanel>()
                             .AddSingletonXnaControl<LANLobby>()
                             .AddSingletonXnaControl<CnCNetGameLobby>()
                             .AddSingletonXnaControl<CnCNetGameLoadingLobby>()
                             .AddSingletonXnaControl<CnCNetLobby>()
+                            .AddSingletonXnaControl<CnCNetLobby2>()
+                            .AddSingletonXnaControl<GameListBox>()
+                            .AddSingletonXnaControl<GameListBox2>()
+                            .AddSingletonXnaControl<PlayerListBox>()
+                            .AddSingletonXnaControl<PlayerListBox2>()
+                            .AddSingletonXnaControl<PasswordRequestWindow>()
+                            .AddSingletonXnaControl<PasswordRequestWindow2>()
+                            .AddSingletonXnaControl<CnCNetLoginWindow>()
+                            .AddSingletonXnaControl<CnCNetLoginWindow2>()
+                            .AddSingletonXnaControl<GameFiltersPanel>()
+                            .AddSingletonXnaControl<GameCreationWindow>()
+                            .AddSingletonXnaControl<GlobalContextMenu2>()
                             .AddSingletonXnaControl<GameInProgressWindow>()
                             .AddSingletonXnaControl<SkirmishLobby>()
-                            .AddSingletonXnaControl<MainMenu>()
+                            .AddSingletonXnaControl<SkirmishLobby2>()
+                            .AddSingletonXnaControl<MainMenu2>()
                             .AddSingletonXnaControl<MapPreviewBox>()
                             .AddSingletonXnaControl<GameLaunchButton>()
                             .AddSingletonXnaControl<PlayerExtraOptionsPanel>();
@@ -248,6 +267,7 @@ namespace DTAClient.DXGUI
                             .AddTransientXnaControl<XNATrackbar>()
                             .AddTransientXnaControl<XNAChatTextBox>()
                             .AddTransientXnaControl<ChatListBox>()
+                            .AddTransientXnaControl<ChatListBox2>()
                             .AddTransientXnaControl<GameLobbyCheckBox>()
                             .AddTransientXnaControl<GameLobbyDropDown>()
                             .AddTransientXnaControl<SettingCheckBox>()

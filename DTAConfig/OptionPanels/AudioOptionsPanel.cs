@@ -8,7 +8,7 @@ using System;
 
 namespace DTAConfig.OptionPanels
 {
-    class AudioOptionsPanel : XNAOptionsPanel
+    public class AudioOptionsPanel : XNAOptionsPanel
     {
         public AudioOptionsPanel(WindowManager windowManager, UserINISettings iniSettings)
             : base(windowManager, iniSettings)

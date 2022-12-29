@@ -1,6 +1,6 @@
 ﻿namespace DTAConfig.Settings
 {
-    interface IUserSetting
+    public interface IUserSetting
     {
 
         /// <summary>
