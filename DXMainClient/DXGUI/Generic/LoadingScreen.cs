@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using ClientCore;
 using ClientCore.CnCNet5;
@@ -7,6 +10,7 @@ using ClientGUI;
 using ClientUpdater;
 using DTAClient.Domain.Multiplayer;
 using DTAClient.Online;
+using DTAClient.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Xna.Framework;
 using Rampastring.Tools;
@@ -20,18 +24,17 @@ namespace DTAClient.DXGUI.Generic
             CnCNetManager cncnetManager,
             WindowManager windowManager,
             IServiceProvider serviceProvider,
-            MapLoader mapLoader
+            MapLoaderService mapLoaderService
         ) : base(windowManager)
         {
             this.cncnetManager = cncnetManager;
             this.serviceProvider = serviceProvider;
-            this.mapLoader = mapLoader;
+            this.mapLoaderService = mapLoaderService;
         }
 
-        private MapLoader mapLoader;
+        private MapLoaderService mapLoaderService;
         private bool visibleSpriteCursor;
-        private Task updaterInitTask;
-        private Task mapLoadTask;
+        private bool loadingFinished;
         private readonly CnCNetManager cncnetManager;
         private readonly IServiceProvider serviceProvider;
 
@@ -46,36 +49,38 @@ namespace DTAClient.DXGUI.Generic
 
             CenterOnParent();
 
-            bool initUpdater = !ClientConfiguration.Instance.ModMode;
-
-            if (initUpdater)
-                updaterInitTask = Task.Run(InitUpdater).HandleTask();
-
-            mapLoadTask = mapLoader.LoadMapsAsync().HandleTask();
-
             if (Cursor.Visible)
             {
                 Cursor.Visible = false;
                 visibleSpriteCursor = true;
             }
+
+            // Combine individual tasks to single observable - only resolve when all have completed (zip)
+            Observable.Zip(
+                InitUpdater(),
+                InitMapLoader()
+            ).Subscribe(_ => loadingFinished = true);
         }
 
-        private void InitUpdater()
-        {
-            Updater.OnLocalFileVersionsChecked += LogGameClientVersion;
-            Updater.CheckLocalFileVersions();
-        }
+        private static IObservable<Unit> InitUpdater() =>
+            Observable.FromAsync(() => Task.Run(() =>
+            {
+                if (ClientConfiguration.Instance.ModMode)
+                    return;
 
-        private void LogGameClientVersion()
-        {
-            Logger.Log($"Game Client Version: {ClientConfiguration.Instance.LocalGame} {Updater.GameVersion}");
-            Updater.OnLocalFileVersionsChecked -= LogGameClientVersion;
-        }
+                Updater.OnLocalFileVersionsChecked += () =>
+                {
+                    Logger.Log($"Game Client Version: {ClientConfiguration.Instance.LocalGame} {Updater.GameVersion}");
+                };
+                Updater.CheckLocalFileVersions();
+            }));
+
+        private IObservable<Unit> InitMapLoader()
+            => Observable.FromAsync(() => Task.Run(mapLoaderService.LoadMapsAsync));
 
         private void Finish()
         {
-            ProgramConstants.GAME_VERSION = ClientConfiguration.Instance.ModMode ?
-                "N/A" : Updater.GameVersion;
+            ProgramConstants.GAME_VERSION = ClientConfiguration.Instance.ModMode ? "N/A" : Updater.GameVersion;
 
             MainMenu mainMenu = serviceProvider.GetService<MainMenu>();
 
@@ -102,11 +107,8 @@ namespace DTAClient.DXGUI.Generic
         {
             base.Update(gameTime);
 
-            if (updaterInitTask == null || updaterInitTask.Status == TaskStatus.RanToCompletion)
-            {
-                if (mapLoadTask.Status == TaskStatus.RanToCompletion)
-                    Finish();
-            }
+            if (loadingFinished)
+                Finish();
         }
     }
 }

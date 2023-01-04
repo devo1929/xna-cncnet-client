@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using DTAClient.Services;
 using SixLabors.ImageSharp;
 using Color = Microsoft.Xna.Framework.Color;
 using Exception = System.Exception;
@@ -123,7 +124,7 @@ namespace DTAClient.Domain.Multiplayer
         /// Includes the game directory in the path.
         /// </summary>
         [JsonInclude]
-        public string CompleteFilePath => SafePath.CombineFilePath(ProgramConstants.GamePath, FormattableString.Invariant($"{BaseFilePath}{MapLoader.MAP_FILE_EXTENSION}"));
+        public string CompleteFilePath => SafePath.CombineFilePath(ProgramConstants.GamePath, FormattableString.Invariant($"{BaseFilePath}{MapLoaderService.MAP_FILE_EXTENSION}"));
 
         /// <summary>
         /// The file name of the preview image.

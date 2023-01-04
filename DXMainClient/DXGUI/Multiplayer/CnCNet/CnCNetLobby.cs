@@ -22,6 +22,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClientCore.Enums;
 using ClientCore.Extensions;
+using DTAClient.Enums;
+using DTAClient.Services;
 using Localization;
 using SixLabors.ImageSharp;
 using Color = Microsoft.Xna.Framework.Color;
@@ -32,16 +34,27 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
     using UserChannelPair = Tuple<string, string>;
     using InvitationIndex = Dictionary<Tuple<string, string>, WeakReference>;
 
-    internal sealed class CnCNetLobby : XNAWindow, ISwitchable
+    public sealed class CnCNetLobby : XNAWindow, ISwitchable
     {
         public event EventHandler UpdateCheck;
 
-        public CnCNetLobby(WindowManager windowManager, CnCNetManager connectionManager,
-            CnCNetGameLobby gameLobby, CnCNetGameLoadingLobby gameLoadingLobby,
-            TopBar topBar, PrivateMessagingWindow pmWindow, TunnelHandler tunnelHandler,
-            GameCollection gameCollection, CnCNetUserData cncnetUserData)
+        public CnCNetLobby(
+            WindowManager windowManager, 
+            CnCNetClientService cncnetClientService,
+            TopBarService topBarService,
+            CnCNetManager connectionManager,
+            CnCNetGameLobby gameLobby, 
+            CnCNetGameLoadingLobby gameLoadingLobby,
+            TopBar topBar, 
+            PrivateMessagingWindow pmWindow, 
+            TunnelHandler tunnelHandler,
+            GameCollection gameCollection, 
+            CnCNetUserData cncnetUserData
+            )
             : base(windowManager)
         {
+            this.cncnetClientService = cncnetClientService;
+            this.topBarService = topBarService;
             this.connectionManager = connectionManager;
             this.gameLobby = gameLobby;
             this.gameLoadingLobby = gameLoadingLobby;
@@ -60,6 +73,8 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             topBar.LogoutEvent += LogoutEvent;
         }
 
+        private readonly CnCNetClientService cncnetClientService;
+        private readonly TopBarService topBarService;
         private readonly CnCNetManager connectionManager;
         private readonly CnCNetUserData cncnetUserData;
 
@@ -151,6 +166,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
         public override void Initialize()
         {
+            topBarService.AddPrimarySwitchable(this);
             invitationIndex = new InvitationIndex();
 
             ClientRectangle = new Rectangle(0, 0, WindowManager.RenderResolutionX - 64,
@@ -703,13 +719,13 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
         /// </summary>
         private void LoginWindow_Cancelled(object sender, EventArgs e)
         {
-            topBar.SwitchToPrimary();
+            topBarService.SwitchToPrimary();
             loginWindow.Disable();
         }
 
         private void GameLoadingLobby_GameLeft(object sender, EventArgs e)
         {
-            topBar.SwitchToSecondary();
+            topBarService.SwitchToCncNetLobby();
             isInGameRoom = false;
             SetLogOutButtonText();
 
@@ -719,7 +735,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
         private void GameLobby_GameLeft(object sender, EventArgs e)
         {
-            topBar.SwitchToSecondary();
+            topBarService.SwitchToCncNetLobby();
             isInGameRoom = false;
             SetLogOutButtonText();
 
@@ -825,7 +841,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
             if (isInGameRoom)
             {
-                topBar.SwitchToPrimary();
+                topBarService.SwitchToPrimary();
                 return false;
             }
 
@@ -961,7 +977,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
         {
             if (isInGameRoom)
             {
-                topBar.SwitchToPrimary();
+                topBarService.SwitchToPrimary();
                 return;
             }
 
@@ -1534,7 +1550,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
         {
             if (isInGameRoom)
             {
-                topBar.SwitchToPrimary();
+                topBarService.SwitchToPrimary();
                 return;
             }
 
@@ -1544,10 +1560,10 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
                 await connectionManager.DisconnectAsync().ConfigureAwait(false);
             }
 
-            topBar.SwitchToPrimary();
+            topBarService.SwitchToPrimary();
         }
 
-        public void SwitchOn()
+        public void Open()
         {
             Enable();
 

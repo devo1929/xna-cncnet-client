@@ -23,6 +23,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClientCore.Extensions;
 using ClientUpdater;
+using DTAClient.Enums;
+using DTAClient.Services;
+using DTAClient.ViewModels;
 
 namespace DTAClient.DXGUI.Generic
 {
@@ -40,6 +43,8 @@ namespace DTAClient.DXGUI.Generic
         /// </summary>
         public MainMenu(
             WindowManager windowManager,
+            CnCNetClientService cncnetClientService,
+            TopBarService topBarService,
             SkirmishLobby skirmishLobby,
             LANLobby lanLobby,
             TopBar topBar,
@@ -54,6 +59,8 @@ namespace DTAClient.DXGUI.Generic
             GameInProgressWindow gameInProgressWindow
         ) : base(windowManager)
         {
+            this.cncnetClientService = cncnetClientService;
+            this.topBarService = topBarService;
             this.lanLobby = lanLobby;
             this.topBar = topBar;
             this.connectionManager = connectionManager;
@@ -80,6 +87,8 @@ namespace DTAClient.DXGUI.Generic
 
         private SkirmishLobby skirmishLobby;
 
+        private readonly CnCNetClientService cncnetClientService;
+        private readonly TopBarService topBarService;
         private LANLobby lanLobby;
 
         private CnCNetManager connectionManager;
@@ -135,15 +144,14 @@ namespace DTAClient.DXGUI.Generic
         private XNAClientButton btnStatistics;
         private XNAClientButton btnCredits;
         private XNAClientButton btnExtras;
+        private ClientViewModel viewModel;
+        private TopBarViewModel topBarViewModel;
 
         /// <summary>
         /// Initializes the main menu's controls.
         /// </summary>
         public override void Initialize()
         {
-            topBar.SetSecondarySwitch(cncnetLobby);
-            GameProcessLogic.GameProcessExited += SharedUILogic_GameProcessExited;
-
             Name = nameof(MainMenu);
             BackgroundTexture = AssetLoader.LoadTexture("MainMenu/mainmenubg.png");
             ClientRectangle = new Rectangle(0, 0, BackgroundTexture.Width, BackgroundTexture.Height);
@@ -227,7 +235,7 @@ namespace DTAClient.DXGUI.Generic
             btnExit.HoverSoundEffect = new EnhancedSoundEffect("MainMenu/button.wav");
             btnExit.LeftClick += (_, _) => BtnExit_LeftClickAsync().HandleTask();
 
-            XNALabel lblCnCNetStatus = new XNALabel(WindowManager);
+            var lblCnCNetStatus = new XNALabel(WindowManager);
             lblCnCNetStatus.Name = nameof(lblCnCNetStatus);
             lblCnCNetStatus.Text = "DTA players on CnCNet:".L10N("UI:Main:CnCNetOnlinePlayersCountText");
             lblCnCNetStatus.ClientRectangle = new Rectangle(12, 9, 0, 0);
@@ -310,12 +318,43 @@ namespace DTAClient.DXGUI.Generic
 
             optionsWindow.OnForceUpdate += (s, e) => ForceUpdate();
 
-            GameProcessLogic.GameProcessStarted += SharedUILogic_GameProcessStarted;
-            GameProcessLogic.GameProcessStarting += SharedUILogic_GameProcessStarting;
             UserINISettings.Instance.SettingsSaved += SettingsSaved;
             Updater.Restart += (_, _) => WindowManager.AddCallback(() => ExitClientAsync().HandleTask());
 
             SetButtonHotkeys(true);
+
+            cncnetClientService.GetViewModel().Subscribe(ClientViewModelUpdated);
+            topBarService.GetViewModel().Subscribe(TopBarViewModelUpdated);
+        }
+
+        private void ClientViewModelUpdated(ClientViewModel vm)
+        {
+            RefreshForGameProcessState(vm);
+            
+            viewModel = vm;
+        }
+
+        private void TopBarViewModelUpdated(TopBarViewModel vm) => topBarViewModel = vm;
+
+        private void RefreshForGameProcessState(ClientViewModel vm)
+        {
+            if (viewModel?.GameProcessState == vm.GameProcessState)
+                return;
+            
+            switch (vm.GameProcessState)
+            {
+                case GameProcessStateEnum.Started:
+                    GameProcessStarted();
+                    return;
+                case GameProcessStateEnum.Staring:
+                    GameProcessStarting();
+                    return;
+                case GameProcessStateEnum.Exited:
+                    GameProcessExited();
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(vm.GameProcessState), vm.GameProcessState, "Invalid game process state");
+            }
         }
 
         private void SetButtonHotkeys(bool enableHotkeys)
@@ -363,7 +402,7 @@ namespace DTAClient.DXGUI.Generic
         /// <summary>
         /// Refreshes settings. Called when the game process is starting.
         /// </summary>
-        private void SharedUILogic_GameProcessStarting()
+        private void GameProcessStarting()
         {
             UserINISettings.Instance.ReloadSettings();
 
@@ -390,8 +429,7 @@ namespace DTAClient.DXGUI.Generic
                     if (!UserINISettings.Instance.PlayMainMenuMusic)
                         isMusicFading = true;
                 }
-                else if (topBar.GetTopMostPrimarySwitchable() == this &&
-                    topBar.LastSwitchType == SwitchType.PRIMARY)
+                else if (topBarViewModel.ActiveSwitchable == this)
                 {
                     PlayMusic();
                 }
@@ -487,7 +525,7 @@ namespace DTAClient.DXGUI.Generic
 
         private void FirstRunMessageBox_YesClicked(XNAMessageBox messageBox) => optionsWindow.Open();
 
-        private void SharedUILogic_GameProcessStarted() => MusicOff();
+        private void GameProcessStarted() => MusicOff();
 
         private void SkirmishLobby_Exited(object sender, EventArgs e)
         {
@@ -497,8 +535,6 @@ namespace DTAClient.DXGUI.Generic
 
         private void LanLobby_Exited(object sender, EventArgs e)
         {
-            topBar.SetLanMode(false);
-
             if (UserINISettings.Instance.AutomaticCnCNetLogin)
                 connectionManager.Connect();
 
@@ -549,8 +585,6 @@ namespace DTAClient.DXGUI.Generic
             DarkeningPanel.AddAndInitializeWithControl(WindowManager, optionsWindow);
             WindowManager.AddAndInitializeControl(privateMessagingPanel);
             privateMessagingPanel.AddChild(privateMessagingWindow);
-            topBar.SetTertiarySwitch(privateMessagingWindow);
-            topBar.SetOptionsWindow(optionsWindow);
             WindowManager.AddAndInitializeControl(gameInProgressWindow);
 
             skirmishLobby.Disable();
@@ -562,7 +596,7 @@ namespace DTAClient.DXGUI.Generic
             optionsWindow.Disable();
 
             WindowManager.AddAndInitializeControl(topBar);
-            topBar.AddPrimarySwitchable(this);
+            topBarService.AddPrimarySwitchable(this);
 
             SwitchMainMenuMusicFormat();
 
@@ -829,7 +863,7 @@ namespace DTAClient.DXGUI.Generic
 
         private async ValueTask BtnLan_LeftClickAsync()
         {
-            await lanLobby.OpenAsync().ConfigureAwait(false);
+            lanLobby.Open();
 
             if (UserINISettings.Instance.StopMusicOnMenu)
                 MusicOff();
@@ -837,10 +871,10 @@ namespace DTAClient.DXGUI.Generic
             if (connectionManager.IsConnected)
                 await connectionManager.DisconnectAsync().ConfigureAwait(false);
 
-            topBar.SetLanMode(true);
+            // topBar.SetLanMode(true);
         }
 
-        private void BtnCnCNet_LeftClick(object sender, EventArgs e) => topBar.SwitchToSecondary();
+        private void BtnCnCNet_LeftClick(object sender, EventArgs e) => topBarService.SwitchToCncNetLobby();
 
         private void BtnSkirmish_LeftClick(object sender, EventArgs e)
         {
@@ -871,7 +905,7 @@ namespace DTAClient.DXGUI.Generic
             return FadeMusicExitAsync();
         }
 
-        private void SharedUILogic_GameProcessExited() =>
+        private void GameProcessExited() =>
             AddCallback(HandleGameProcessExited);
 
         private void HandleGameProcessExited()
@@ -884,8 +918,7 @@ namespace DTAClient.DXGUI.Generic
             // LAN has the top bar disabled, so to detect the LAN game lobby
             // we'll check whether the top bar is enabled
             if (!UserINISettings.Instance.StopMusicOnMenu ||
-                (topBar.Enabled && topBar.LastSwitchType == SwitchType.PRIMARY &&
-                topBar.GetTopMostPrimarySwitchable() == this))
+                (topBar.Enabled && topBarViewModel.ActiveSwitchable == this))
                 PlayMusic();
         }
 
@@ -895,7 +928,7 @@ namespace DTAClient.DXGUI.Generic
         private void CncnetLobby_UpdateCheck(object sender, EventArgs e)
         {
             CheckForUpdates();
-            topBar.SwitchToPrimary();
+            topBarService.SwitchToPrimary();
         }
 
         public override void Update(GameTime gameTime)
@@ -1001,13 +1034,12 @@ namespace DTAClient.DXGUI.Generic
             if (UserINISettings.Instance.StopMusicOnMenu)
                 PlayMusic();
 
-            if (!ClientConfiguration.Instance.ModMode && UserINISettings.Instance.CheckForUpdates)
-            {
-                // Re-check for updates
+            if (ClientConfiguration.Instance.ModMode || !UserINISettings.Instance.CheckForUpdates)
+                return;
 
-                if ((DateTime.Now - lastUpdateCheckTime) > TimeSpan.FromSeconds(UPDATE_RE_CHECK_THRESHOLD))
-                    CheckForUpdates();
-            }
+            // Re-check for updates
+            if ((DateTime.Now - lastUpdateCheckTime) > TimeSpan.FromSeconds(UPDATE_RE_CHECK_THRESHOLD))
+                CheckForUpdates();
         }
 
         public void SwitchOff()
@@ -1065,5 +1097,7 @@ namespace DTAClient.DXGUI.Generic
         }
 
         public string GetSwitchName() => "Main Menu".L10N("UI:Main:MainMenu");
+
+        public SwitchableTypeEnum GetSwitchType() => SwitchableTypeEnum.Primary;
     }
 }

@@ -1,13 +1,13 @@
-﻿using ClientCore;
+﻿using System.Collections.Generic;
+using ClientCore;
 using ClientGUI;
 using DTAConfig.Settings;
 using Microsoft.Xna.Framework;
 using Rampastring.Tools;
 using Rampastring.XNAUI;
 using Rampastring.XNAUI.XNAControls;
-using System.Collections.Generic;
 
-namespace DTAConfig.OptionPanels
+namespace DTAClient.DXGUI.Generic.OptionPanels
 {
     /// <summary>
     /// A base class for all option panels.

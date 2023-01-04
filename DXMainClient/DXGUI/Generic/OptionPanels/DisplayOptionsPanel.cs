@@ -1,16 +1,15 @@
-using Localization;
+using System;
+using System.Collections.Generic;
+using System.Windows.Forms;
 using ClientCore;
 using ClientGUI;
+using DTAConfig;
+using Localization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Rampastring.Tools;
 using Rampastring.XNAUI;
 using Rampastring.XNAUI.XNAControls;
-using System;
-using System.Collections.Generic;
-#if WINFORMS
-using System.Windows.Forms;
-#endif
 #if TS
 using Microsoft.Win32;
 using System.Diagnostics;
@@ -19,7 +18,7 @@ using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 #endif
 
-namespace DTAConfig.OptionPanels
+namespace DTAClient.DXGUI.Generic.OptionPanels
 {
     class DisplayOptionsPanel : XNAOptionsPanel
     {

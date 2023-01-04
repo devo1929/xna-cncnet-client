@@ -1,17 +1,17 @@
-﻿using Localization;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using ClientCore;
 using ClientCore.CnCNet5;
+using ClientCore.Enums;
+using ClientCore.Extensions;
 using ClientGUI;
+using Localization;
 using Microsoft.Xna.Framework;
 using Rampastring.XNAUI;
 using Rampastring.XNAUI.XNAControls;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using ClientCore.Enums;
-using ClientCore.Extensions;
 
-namespace DTAConfig.OptionPanels
+namespace DTAClient.DXGUI.Generic.OptionPanels
 {
     class CnCNetOptionsPanel : XNAOptionsPanel
     {

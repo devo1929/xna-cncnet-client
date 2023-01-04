@@ -17,12 +17,14 @@ using DTAClient.DXGUI.Multiplayer;
 using DTAClient.DXGUI.Multiplayer.CnCNet;
 using DTAClient.DXGUI.Multiplayer.GameLobby;
 using DTAClient.Online;
+using DTAClient.Services;
 using DTAConfig;
 using DTAConfig.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Rampastring.XNAUI.XNAControls;
 using MainMenu = DTAClient.DXGUI.Generic.MainMenu;
+using OptionsWindow = DTAClient.DXGUI.Generic.OptionsWindow;
 #if DX || (GL && WINFORMS)
 using System.Diagnostics;
 #endif
@@ -206,7 +208,9 @@ namespace DTAClient.DXGUI
                             .AddSingleton<TunnelHandler>()
                             .AddSingleton<DiscordHandler>()
                             .AddSingleton<PrivateMessageHandler>()
-                            .AddSingleton<MapLoader>();
+                            .AddSingleton<MapLoaderService>()
+                            .AddSingleton<CnCNetClientService>()
+                            .AddSingleton<TopBarService>();
 
                         // singleton xna controls - same instance on each request
                         services

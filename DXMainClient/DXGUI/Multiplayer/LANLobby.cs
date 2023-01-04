@@ -19,7 +19,9 @@ using DTAClient.Domain.LAN;
 using DTAClient.Domain.Multiplayer;
 using DTAClient.Domain.Multiplayer.LAN;
 using DTAClient.DXGUI.Multiplayer.GameLobby;
+using DTAClient.Enums;
 using DTAClient.Online;
+using DTAClient.Services;
 using Localization;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
@@ -32,20 +34,22 @@ using Rectangle = Microsoft.Xna.Framework.Rectangle;
 
 namespace DTAClient.DXGUI.Multiplayer
 {
-    internal sealed class LANLobby : XNAWindow
+    internal sealed class LANLobby : XNAWindow, ISwitchable
     {
         private const double ALIVE_MESSAGE_INTERVAL = 5.0;
         private const double INACTIVITY_REMOVE_TIME = 10.0;
 
         public LANLobby(
             WindowManager windowManager,
+            TopBarService topBarService,
             GameCollection gameCollection,
-            MapLoader mapLoader,
+            MapLoaderService mapLoaderService,
             DiscordHandler discordHandler)
             : base(windowManager)
         {
+            this.topBarService = topBarService;
             this.gameCollection = gameCollection;
-            this.mapLoader = mapLoader;
+            this.mapLoaderService = mapLoaderService;
             this.discordHandler = discordHandler;
         }
 
@@ -67,13 +71,14 @@ namespace DTAClient.DXGUI.Multiplayer
         private LANColor[] chatColors;
         private string localGame;
         private int localGameIndex;
+        private readonly TopBarService topBarService;
         private GameCollection gameCollection;
         private Socket socket;
         private IPEndPoint endPoint;
         private Encoding encoding;
         private List<LANLobbyUser> players = new List<LANLobbyUser>();
         private TimeSpan timeSinceAliveMessage = TimeSpan.Zero;
-        private MapLoader mapLoader;
+        private MapLoaderService mapLoaderService;
         private DiscordHandler discordHandler;
         private bool initSuccess;
         private CancellationTokenSource cancellationTokenSource;
@@ -216,12 +221,12 @@ namespace DTAClient.DXGUI.Multiplayer
             gameCreationPanel.SetPositionAndSize();
 
             lanGameLobby = new LANGameLobby(WindowManager, "MultiplayerGameLobby",
-                null, chatColors, mapLoader, discordHandler);
+                null, chatColors, mapLoaderService, discordHandler);
             DarkeningPanel.AddAndInitializeWithControl(WindowManager, lanGameLobby);
             lanGameLobby.Disable();
 
             lanGameLoadingLobby = new LANGameLoadingLobby(WindowManager,
-                chatColors, mapLoader, discordHandler);
+                chatColors, mapLoaderService, discordHandler);
             DarkeningPanel.AddAndInitializeWithControl(WindowManager, lanGameLoadingLobby);
             lanGameLoadingLobby.Disable();
 
@@ -282,54 +287,9 @@ namespace DTAClient.DXGUI.Multiplayer
             UserINISettings.Instance.SaveSettings();
         }
 
-        public async ValueTask OpenAsync()
+        public void Open()
         {
-            players.Clear();
-            lbPlayerList.Clear();
-            lbGameList.ClearGames();
-            cancellationTokenSource?.Dispose();
-
-            Visible = true;
-            Enabled = true;
-            cancellationTokenSource = new CancellationTokenSource();
-
-            Logger.Log("Creating LAN socket.");
-
-            IEnumerable<UnicastIPAddressInformation> lanIpAddresses = NetworkHelper.GetUniCastIpAddresses();
-            UnicastIPAddressInformation lanIpV4Address = lanIpAddresses.FirstOrDefault(q => q.Address.AddressFamily is AddressFamily.InterNetwork);
-
-            lanIpV4BroadcastIpAddress = NetworkHelper.GetIpV4BroadcastAddress(lanIpV4Address);
-
-            try
-            {
-                socket = new Socket(SocketType.Dgram, ProtocolType.Udp)
-                {
-                    EnableBroadcast = true
-                };
-
-                socket.Bind(new IPEndPoint(lanIpV4Address.Address, ProgramConstants.LAN_LOBBY_PORT));
-
-                endPoint = new IPEndPoint(lanIpV4BroadcastIpAddress, ProgramConstants.LAN_LOBBY_PORT);
-                initSuccess = true;
-            }
-            catch (SocketException ex)
-            {
-                ProgramConstants.LogException(ex, "Creating LAN socket failed!");
-                lbChatMessages.AddMessage(new ChatMessage(Color.Red,
-                    "Creating LAN socket failed! Message:".L10N("UI:Main:SocketFailure1") + " " + ex.Message));
-                lbChatMessages.AddMessage(new ChatMessage(Color.Red,
-                    "Please check your firewall settings.".L10N("UI:Main:SocketFailure2")));
-                lbChatMessages.AddMessage(new ChatMessage(Color.Red,
-                    $"Also make sure that no other application is listening to traffic on UDP ports" +
-                    $" {ProgramConstants.LAN_LOBBY_PORT} - {ProgramConstants.LAN_INGAME_PORT}.".L10N("UI:Main:SocketFailure3")));
-
-                initSuccess = false;
-                return;
-            }
-
-            Logger.Log("Starting listener.");
-            ListenAsync(cancellationTokenSource.Token).HandleTask();
-            await SendAliveAsync(cancellationTokenSource.Token).ConfigureAwait(false);
+            topBarService.AddPrimarySwitchable(this);
         }
 
         private async ValueTask SendMessageAsync(string message, CancellationToken cancellationToken)
@@ -597,12 +557,7 @@ namespace DTAClient.DXGUI.Multiplayer
 
         private async ValueTask BtnMainMenu_LeftClickAsync()
         {
-            Visible = false;
-            Enabled = false;
-            await SendMessageAsync(LANCommands.PLAYER_QUIT_COMMAND, CancellationToken.None).ConfigureAwait(false);
-            cancellationTokenSource.Cancel();
-            socket.Close();
-            Exited?.Invoke(this, EventArgs.Empty);
+            topBarService.RemoveSwitchable(this);
         }
 
         private async ValueTask BtnNewGame_LeftClickAsync()
@@ -633,5 +588,70 @@ namespace DTAClient.DXGUI.Multiplayer
 
             base.Update(gameTime);
         }
+
+        public void SwitchOn()
+        {
+            players.Clear();
+            lbPlayerList.Clear();
+            lbGameList.ClearGames();
+            cancellationTokenSource?.Dispose();
+
+            Visible = true;
+            Enabled = true;
+            cancellationTokenSource = new CancellationTokenSource();
+
+            Logger.Log("Creating LAN socket.");
+
+            IEnumerable<UnicastIPAddressInformation> lanIpAddresses = NetworkHelper.GetUniCastIpAddresses();
+            UnicastIPAddressInformation lanIpV4Address = lanIpAddresses.FirstOrDefault(q => q.Address.AddressFamily is AddressFamily.InterNetwork);
+
+            lanIpV4BroadcastIpAddress = NetworkHelper.GetIpV4BroadcastAddress(lanIpV4Address);
+
+            try
+            {
+                socket = new Socket(SocketType.Dgram, ProtocolType.Udp)
+                {
+                    EnableBroadcast = true
+                };
+
+                socket.Bind(new IPEndPoint(lanIpV4Address.Address, ProgramConstants.LAN_LOBBY_PORT));
+
+                endPoint = new IPEndPoint(lanIpV4BroadcastIpAddress, ProgramConstants.LAN_LOBBY_PORT);
+                initSuccess = true;
+            }
+            catch (SocketException ex)
+            {
+                ProgramConstants.LogException(ex, "Creating LAN socket failed!");
+                lbChatMessages.AddMessage(new ChatMessage(Color.Red,
+                    "Creating LAN socket failed! Message:".L10N("UI:Main:SocketFailure1") + " " + ex.Message));
+                lbChatMessages.AddMessage(new ChatMessage(Color.Red,
+                    "Please check your firewall settings.".L10N("UI:Main:SocketFailure2")));
+                lbChatMessages.AddMessage(new ChatMessage(Color.Red,
+                    $"Also make sure that no other application is listening to traffic on UDP ports" +
+                    $" {ProgramConstants.LAN_LOBBY_PORT} - {ProgramConstants.LAN_INGAME_PORT}.".L10N("UI:Main:SocketFailure3")));
+
+                initSuccess = false;
+                return;
+            }
+
+            Logger.Log("Starting listener.");
+            ListenAsync(cancellationTokenSource.Token).HandleTask();
+            SendAliveAsync(cancellationTokenSource.Token).HandleTask();
+        }
+
+        public void SwitchOff()
+        {
+            if (!Enabled)
+                return;
+
+            Visible = false;
+            Enabled = false;
+            SendMessageAsync(LANCommands.PLAYER_QUIT_COMMAND, CancellationToken.None).HandleTask();
+            cancellationTokenSource.Cancel();
+            socket.Close();
+            Exited?.Invoke(this, EventArgs.Empty);
+        }
+
+        public string GetSwitchName() => "LAN Lobby"; // not actually used currently
     }
 }

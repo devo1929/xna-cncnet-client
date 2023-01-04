@@ -18,6 +18,7 @@ using ClientCore.Enums;
 using ClientCore.Extensions;
 using DTAClient.DXGUI.Multiplayer.CnCNet;
 using DTAClient.Online.EventArguments;
+using DTAClient.Services;
 using Localization;
 
 namespace DTAClient.DXGUI.Multiplayer.GameLobby
@@ -49,19 +50,19 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
         /// </summary>
         /// <param name="windowManager"></param>
         /// <param name="iniName">The name of the lobby in GameOptions.ini.</param>
-        /// <param name="mapLoader"></param>
+        /// <param name="mapLoaderService"></param>
         /// <param name="isMultiplayer"></param>
         /// <param name="discordHandler"></param>
         public GameLobbyBase(
             WindowManager windowManager,
             string iniName,
-            MapLoader mapLoader,
+            MapLoaderService mapLoaderService,
             bool isMultiplayer,
             DiscordHandler discordHandler)
             : base(windowManager)
         {
             _iniSectionName = iniName;
-            MapLoader = mapLoader;
+            MapLoaderService = mapLoaderService;
             this.isMultiplayer = isMultiplayer;
             this.discordHandler = discordHandler;
         }
@@ -77,12 +78,12 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
 
         protected DiscordHandler discordHandler;
 
-        protected MapLoader MapLoader;
+        protected MapLoaderService MapLoaderService;
         /// <summary>
         /// The list of multiplayer game mode maps.
         /// Each is an instance of a map for a specific game mode.
         /// </summary>
-        protected GameModeMapCollection GameModeMaps => MapLoader.GameModeMaps;
+        protected GameModeMapCollection GameModeMaps => MapLoaderService.GameModeMaps;
 
         protected GameModeMapFilter gameModeMapFilter;
 
@@ -630,7 +631,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
         {
             try
             {
-                MapLoader.DeleteCustomMap(GameModeMap);
+                MapLoaderService.DeleteCustomMap(GameModeMap);
 
                 tbMapSearch.Text = string.Empty;
                 if (GameMode.Maps.Count == 0)

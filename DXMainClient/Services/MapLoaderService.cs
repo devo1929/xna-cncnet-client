@@ -6,11 +6,12 @@ using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using ClientCore;
+using DTAClient.Domain.Multiplayer;
 using Rampastring.Tools;
 
-namespace DTAClient.Domain.Multiplayer
+namespace DTAClient.Services
 {
-    public class MapLoader
+    public class MapLoaderService
     {
         public const string MAP_FILE_EXTENSION = ".map";
         private const string CUSTOM_MAPS_DIRECTORY = "Maps/Custom";

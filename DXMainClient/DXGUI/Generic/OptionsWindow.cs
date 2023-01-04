@@ -1,21 +1,29 @@
-﻿using Localization;
+﻿using System;
 using ClientCore;
 using ClientCore.CnCNet5;
 using ClientGUI;
-using DTAConfig.OptionPanels;
+using ClientUpdater;
+using DTAClient.DXGUI.Generic.OptionPanels;
+using DTAClient.Enums;
+using DTAClient.Services;
+using DTAClient.ViewModels;
+using Localization;
 using Microsoft.Xna.Framework;
 using Rampastring.Tools;
 using Rampastring.XNAUI;
 using Rampastring.XNAUI.XNAControls;
-using System;
-using ClientUpdater;
 
-namespace DTAConfig
+namespace DTAClient.DXGUI.Generic
 {
     public class OptionsWindow : XNAWindow
     {
-        public OptionsWindow(WindowManager windowManager, GameCollection gameCollection) : base(windowManager)
+        public OptionsWindow(
+            WindowManager windowManager, 
+            TopBarService topBarService,
+            GameCollection gameCollection
+            ) : base(windowManager)
         {
+            this.topBarService = topBarService;
             this.gameCollection = gameCollection;
         }
 
@@ -29,7 +37,9 @@ namespace DTAConfig
         private DisplayOptionsPanel displayOptionsPanel;
         private XNAControl topBar;
 
+        private readonly TopBarService topBarService;
         private GameCollection gameCollection;
+        private TopBarViewModel topBarViewModel;
 
         public override void Initialize()
         {
@@ -102,6 +112,14 @@ namespace DTAConfig
             base.Initialize();
 
             CenterOnParent();
+
+            topBarService.GetViewModel().Subscribe(TopBarViewModelUpdated);
+        }
+
+        public void TopBarViewModelUpdated(TopBarViewModel vm)
+        {
+            topBarViewModel = vm;
+            ToggleMainMenuOnlyOptions(!vm.IsViewingMainMenu && !vm.IsViewingLanLobby);
         }
 
         public void SetTopBar(XNAControl topBar) => this.topBar = topBar;

@@ -1,14 +1,14 @@
-﻿using ClientCore;
+﻿using System;
+using ClientCore;
 using ClientCore.CnCNet5;
 using ClientGUI;
-using Localization;
 using DTAConfig.Settings;
+using Localization;
 using Microsoft.Xna.Framework;
 using Rampastring.XNAUI;
 using Rampastring.XNAUI.XNAControls;
-using System;
 
-namespace DTAConfig.OptionPanels
+namespace DTAClient.DXGUI.Generic.OptionPanels
 {
     class GameOptionsPanel : XNAOptionsPanel
     {
@@ -42,7 +42,7 @@ namespace DTAConfig.OptionPanels
 
         private XNATextBox tbPlayerName;
 
-        private HotkeyConfigurationWindow hotkeyConfigWindow;
+        private DTAConfig.HotkeyConfigurationWindow hotkeyConfigWindow;
 
         public override void Initialize()
         {
@@ -159,7 +159,7 @@ namespace DTAConfig.OptionPanels
             lblNotice.Text = ("* If you are currently connected to CnCNet, you need to log out and reconnect" +
                 Environment.NewLine + "for your new name to be applied.").L10N("UI:DTAConfig:ReconnectAfterRename");
 
-            hotkeyConfigWindow = new HotkeyConfigurationWindow(WindowManager);
+            hotkeyConfigWindow = new DTAConfig.HotkeyConfigurationWindow(WindowManager);
             DarkeningPanel.AddAndInitializeWithControl(WindowManager, hotkeyConfigWindow);
             hotkeyConfigWindow.Disable();
 

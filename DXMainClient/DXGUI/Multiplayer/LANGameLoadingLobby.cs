@@ -18,6 +18,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ClientCore.Extensions;
+using DTAClient.Enums;
+using DTAClient.Services;
 
 namespace DTAClient.DXGUI.Multiplayer
 {
@@ -29,13 +31,13 @@ namespace DTAClient.DXGUI.Multiplayer
         public LANGameLoadingLobby(
             WindowManager windowManager,
             LANColor[] chatColors,
-            MapLoader mapLoader,
+            MapLoaderService mapLoaderService,
             DiscordHandler discordHandler)
             : base(windowManager, discordHandler)
         {
             encoding = ProgramConstants.LAN_ENCODING;
             this.chatColors = chatColors;
-            this.mapLoader = mapLoader;
+            this.mapLoaderService = mapLoaderService;
 
             localGame = ClientConfiguration.Instance.LocalGame;
 
@@ -68,7 +70,7 @@ namespace DTAClient.DXGUI.Multiplayer
         private Socket client;
 
         private readonly LANColor[] chatColors;
-        private readonly MapLoader mapLoader;
+        private readonly MapLoaderService mapLoaderService;
         private const int chatColorIndex = 0;
         private readonly Encoding encoding;
 
@@ -85,7 +87,7 @@ namespace DTAClient.DXGUI.Multiplayer
 
         private string localFileHash;
 
-        private List<GameMode> gameModes => mapLoader.GameModes;
+        private List<GameMode> gameModes => mapLoaderService.GameModes;
 
         private int loadedGameId;
 

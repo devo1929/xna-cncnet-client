@@ -11,6 +11,8 @@ using Rampastring.Tools;
 using System.IO;
 using System.Threading.Tasks;
 using DTAClient.Domain;
+using DTAClient.Enums;
+using DTAClient.Services;
 using Microsoft.Xna.Framework;
 using Localization;
 
@@ -20,14 +22,22 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
     {
         private const string SETTINGS_PATH = "Client/SkirmishSettings.ini";
 
-        public SkirmishLobby(WindowManager windowManager, TopBar topBar, MapLoader mapLoader, DiscordHandler discordHandler)
-            : base(windowManager, "SkirmishLobby", mapLoader, false, discordHandler)
+        public SkirmishLobby(
+            WindowManager windowManager, 
+            TopBarService topBarService,
+            TopBar topBar, 
+            MapLoaderService mapLoaderService, 
+            DiscordHandler discordHandler
+            )
+            : base(windowManager, "SkirmishLobby", mapLoaderService, false, discordHandler)
         {
+            this.topBarService = topBarService;
             this.topBar = topBar;
         }
 
         public event EventHandler Exited;
 
+        private readonly TopBarService topBarService;
         TopBar topBar;
 
         public override void Initialize()
@@ -186,7 +196,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
 
             Exited?.Invoke(this, EventArgs.Empty);
 
-            topBar.RemovePrimarySwitchable(this);
+            topBarService.RemoveSwitchable(this);
             ResetDiscordPresence();
 
             return ValueTask.CompletedTask;
@@ -237,8 +247,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
 
         public void Open()
         {
-            topBar.AddPrimarySwitchable(this);
-            Enable();
+            topBarService.AddPrimarySwitchable(this);
         }
 
         public void SwitchOn()

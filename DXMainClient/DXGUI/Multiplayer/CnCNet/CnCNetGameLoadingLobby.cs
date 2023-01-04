@@ -19,6 +19,8 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using ClientCore.Extensions;
+using DTAClient.Enums;
+using DTAClient.Services;
 
 namespace DTAClient.DXGUI.Multiplayer.CnCNet
 {
@@ -32,6 +34,8 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
         public CnCNetGameLoadingLobby(
             WindowManager windowManager,
+            CnCNetClientService cncnetClientService,
+            TopBarService topBarService,
             TopBar topBar,
             CnCNetManager connectionManager,
             TunnelHandler tunnelHandler,
@@ -39,6 +43,8 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             DiscordHandler discordHandler)
             : base(windowManager, discordHandler)
         {
+            this.cncnetClientService = cncnetClientService;
+            this.topBarService = topBarService;
             this.connectionManager = connectionManager;
             this.tunnelHandler = tunnelHandler;
             this.topBar = topBar;
@@ -61,6 +67,8 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
         private CommandHandlerBase[] ctcpCommandHandlers;
 
+        private readonly CnCNetClientService cncnetClientService;
+        private readonly TopBarService topBarService;
         private CnCNetManager connectionManager;
 
         private List<GameMode> gameModes;
@@ -194,7 +202,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             tunnelHandler.CurrentTunnel = null;
             tunnelHandler.CurrentTunnelPinged -= TunnelHandler_CurrentTunnelPinged;
 
-            topBar.RemovePrimarySwitchable(this);
+            topBarService.RemoveSwitchable(this);
         }
 
         private void Channel_CTCPReceived(object sender, ChannelCTCPEventArgs e)
@@ -246,8 +254,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
                     AddNotice(string.Format("{0} - ping to tunnel server: {1} ms".L10N("UI:Main:PlayerPing"), ProgramConstants.PLAYERNAME, tunnelHandler.CurrentTunnel.PingInMs));
             }
 
-            topBar.AddPrimarySwitchable(this);
-            topBar.SwitchToPrimary();
+            topBarService.AddPrimarySwitchable(this);
             WindowManager.SelectedControl = tbChatInput;
             UpdateDiscordPresence(true);
         }
@@ -341,7 +348,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
         {
             await base.GetReadyNotificationAsync().ConfigureAwait(false);
 
-            topBar.SwitchToPrimary();
+            topBarService.SwitchToPrimary();
 
             if (IsHost)
                 await channel.SendCTCPMessageAsync(CnCNetCommands.GET_READY, QueuedMessageType.GAME_GET_READY_MESSAGE, 0).ConfigureAwait(false);

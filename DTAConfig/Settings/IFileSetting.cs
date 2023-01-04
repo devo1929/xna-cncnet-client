@@ -1,6 +1,6 @@
 ﻿namespace DTAConfig.Settings
 {
-    interface IFileSetting : IUserSetting
+    public interface IFileSetting : IUserSetting
     {
         /// <summary>
         /// Determines if the setting availability is checked on runtime.

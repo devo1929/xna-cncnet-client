@@ -16,6 +16,8 @@ using System.Threading.Tasks;
 using ClientCore.Enums;
 using ClientCore.Extensions;
 using DTAClient.Domain.Multiplayer.CnCNet;
+using DTAClient.Enums;
+using DTAClient.Services;
 using Localization;
 using SixLabors.ImageSharp;
 using Color = Microsoft.Xna.Framework.Color;
@@ -23,7 +25,7 @@ using Rectangle = Microsoft.Xna.Framework.Rectangle;
 
 namespace DTAClient.DXGUI.Multiplayer.CnCNet
 {
-    internal sealed class PrivateMessagingWindow : XNAWindow, ISwitchable
+    public sealed class PrivateMessagingWindow : XNAWindow
     {
         private const int MESSAGES_INDEX = 0;
         private const int FRIEND_LIST_VIEW_INDEX = 1;
@@ -40,12 +42,14 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
         public PrivateMessagingWindow(
             WindowManager windowManager,
+            TopBarService topBarService,
             CnCNetManager connectionManager,
             GameCollection gameCollection,
             CnCNetUserData cncnetUserData,
             PrivateMessageHandler privateMessageHandler
         ) : base(windowManager)
         {
+            this.topBarService = topBarService;
             this.gameCollection = gameCollection;
             this.connectionManager = connectionManager;
             this.cncnetUserData = cncnetUserData;
@@ -69,6 +73,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
         private CnCNetManager connectionManager;
 
+        private readonly TopBarService topBarService;
         private GameCollection gameCollection;
 
         private Texture2D unknownGameIcon;
@@ -390,7 +395,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
         public void ClearInviteChannelInfo() => SetInviteChannelInfo(string.Empty, string.Empty, string.Empty);
 
-        private void NotificationBox_LeftClick(object sender, EventArgs e) => SwitchOn();
+        private void NotificationBox_LeftClick(object sender, EventArgs e) => Open();
 
         private void LbUserList_RightClick(object sender, EventArgs e)
         {
@@ -775,7 +780,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
                 lbUserList.ScrollToBottom();
         }
 
-        public void SwitchOn()
+        public void Open()
         {
             tabControl.SelectedTab = MESSAGES_INDEX;
             notificationBox.Hide();
@@ -814,10 +819,6 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
         {
             JoinUserAction = joinUserAction;
         }
-
-        public void SwitchOff() => Disable();
-
-        public string GetSwitchName() => "Private Messaging".L10N("UI:Main:PrivateMessaging");
 
         /// <summary>
         /// A class for storing a private message in memory.

@@ -13,6 +13,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using ClientCore.Extensions;
+using DTAClient.Enums;
 
 namespace DTAClient.DXGUI.Multiplayer
 {

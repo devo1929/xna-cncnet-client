@@ -15,6 +15,8 @@ using System.Threading.Tasks;
 using ClientCore.Extensions;
 using DTAClient.Domain;
 using DTAClient.Domain.Multiplayer.CnCNet;
+using DTAClient.Enums;
+using DTAClient.Services;
 using Microsoft.Xna.Framework.Graphics;
 using Localization;
 
@@ -32,9 +34,9 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             WindowManager windowManager,
             string iniName,
             TopBar topBar,
-            MapLoader mapLoader,
+            MapLoaderService mapLoaderService,
             DiscordHandler discordHandler)
-            : base(windowManager, iniName, mapLoader, true, discordHandler)
+            : base(windowManager, iniName, mapLoaderService, true, discordHandler)
         {
             TopBar = topBar;
 
@@ -498,7 +500,7 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
         /// <param name="mapName">Name of the map given as a parameter, without file extension.</param>
         private void LoadCustomMap(string mapName)
         {
-            Map map = MapLoader.LoadCustomMap($"Maps/Custom/{mapName}", out string resultMessage);
+            Map map = MapLoaderService.LoadCustomMap($"Maps/Custom/{mapName}", out string resultMessage);
             if (map != null)
             {
                 AddNotice(resultMessage);

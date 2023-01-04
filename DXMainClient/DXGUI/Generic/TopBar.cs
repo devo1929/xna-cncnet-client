@@ -12,7 +12,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClientCore.Extensions;
 using DTAClient.Domain.Multiplayer.CnCNet;
+using DTAClient.DXGUI.Multiplayer.CnCNet;
+using DTAClient.Enums;
 using DTAClient.Online.EventArguments;
+using DTAClient.Services;
+using DTAClient.ViewModels;
 using DTAConfig;
 using Localization;
 
@@ -39,26 +43,24 @@ namespace DTAClient.DXGUI.Generic
 
         public TopBar(
             WindowManager windowManager,
+            TopBarService topBarService,
             CnCNetManager connectionManager,
             PrivateMessageHandler privateMessageHandler
         ) : base(windowManager)
         {
             downTimeWaitTime = TimeSpan.FromSeconds(DOWN_TIME_WAIT_SECONDS);
+            this.topBarService = topBarService;
             this.connectionManager = connectionManager;
             this.privateMessageHandler = privateMessageHandler;
         }
 
-        public SwitchType LastSwitchType { get; private set; }
-
-        private List<ISwitchable> primarySwitches = new List<ISwitchable>();
+        private List<ISwitchable> primarySwitches = new();
         private ISwitchable cncnetLobbySwitch;
         private ISwitchable privateMessageSwitch;
 
-        private OptionsWindow optionsWindow;
-
-        private XNAClientButton btnMainButton;
-        private XNAClientButton btnCnCNetLobby;
-        private XNAClientButton btnPrivateMessages;
+        private XNAClientButton btnPrimary;
+        private XNAClientButton btnSecondary;
+        private XNAClientButton btnTertiary;
         private XNAClientButton btnOptions;
         private XNAClientButton btnLogout;
         private XNALabel lblTime;
@@ -67,6 +69,7 @@ namespace DTAClient.DXGUI.Generic
         private XNALabel lblCnCNetPlayerCount;
         private XNALabel lblConnectionStatus;
 
+        private readonly TopBarService topBarService;
         private CnCNetManager connectionManager;
         private readonly PrivateMessageHandler privateMessageHandler;
 
@@ -81,44 +84,10 @@ namespace DTAClient.DXGUI.Generic
 
         private double locationY = -40.0;
 
-        private bool lanMode;
+        private bool lanMode => viewModel?.CncnetConectionStatus == CnCNetConnectionStatusEnum.LanMode;
 
         public EventHandler LogoutEvent;
-
-        public void AddPrimarySwitchable(ISwitchable switchable)
-        {
-            primarySwitches.Add(switchable);
-            btnMainButton.Text = switchable.GetSwitchName() + " (F2)";
-        }
-
-        public void RemovePrimarySwitchable(ISwitchable switchable)
-        {
-            primarySwitches.Remove(switchable);
-            btnMainButton.Text = primarySwitches[^1].GetSwitchName() + " (F2)";
-        }
-
-        public void SetSecondarySwitch(ISwitchable switchable)
-            => cncnetLobbySwitch = switchable;
-
-        public void SetTertiarySwitch(ISwitchable switchable)
-            => privateMessageSwitch = switchable;
-
-        public void SetOptionsWindow(OptionsWindow optionsWindow)
-        {
-            this.optionsWindow = optionsWindow;
-            optionsWindow.EnabledChanged += OptionsWindow_EnabledChanged;
-        }
-
-        private void OptionsWindow_EnabledChanged(object sender, EventArgs e)
-        {
-            if (!lanMode)
-                SetSwitchButtonsClickable(!optionsWindow.Enabled);
-
-            SetOptionsButtonClickable(!optionsWindow.Enabled);
-
-            if (optionsWindow != null)
-                optionsWindow.ToggleMainMenuOnlyOptions(primarySwitches.Count == 1 && !lanMode);
-        }
+        private TopBarViewModel viewModel;
 
         public void Clean()
         {
@@ -134,23 +103,23 @@ namespace DTAClient.DXGUI.Generic
             BackgroundTexture = AssetLoader.CreateTexture(Color.Black, 1, 1);
             DrawBorders = false;
 
-            btnMainButton = new XNAClientButton(WindowManager);
-            btnMainButton.Name = "btnMainButton";
-            btnMainButton.ClientRectangle = new Rectangle(12, 9, UIDesignConstants.BUTTON_WIDTH_160, UIDesignConstants.BUTTON_HEIGHT);
-            btnMainButton.Text = "Main Menu (F2)".L10N("UI:Main:MainMenuF2");
-            btnMainButton.LeftClick += BtnMainButton_LeftClick;
+            btnPrimary = new XNAClientButton(WindowManager);
+            btnPrimary.Name = "btnMainButton";
+            btnPrimary.ClientRectangle = new Rectangle(12, 9, UIDesignConstants.BUTTON_WIDTH_160, UIDesignConstants.BUTTON_HEIGHT);
+            // btnPrimary.Text = "Main Menu (F2)".L10N("UI:Main:MainMenuF2");
+            btnPrimary.LeftClick += BtnPrimary_LeftClick;
 
-            btnCnCNetLobby = new XNAClientButton(WindowManager);
-            btnCnCNetLobby.Name = "btnCnCNetLobby";
-            btnCnCNetLobby.ClientRectangle = new Rectangle(184, 9, UIDesignConstants.BUTTON_WIDTH_160, UIDesignConstants.BUTTON_HEIGHT);
-            btnCnCNetLobby.Text = "CnCNet Lobby (F3)".L10N("UI:Main:LobbyF3");
-            btnCnCNetLobby.LeftClick += BtnCnCNetLobby_LeftClick;
+            btnSecondary = new XNAClientButton(WindowManager);
+            btnSecondary.Name = "btnCnCNetLobby";
+            btnSecondary.ClientRectangle = new Rectangle(184, 9, UIDesignConstants.BUTTON_WIDTH_160, UIDesignConstants.BUTTON_HEIGHT);
+            // btnSecondary.Text = "CnCNet Lobby (F3)".L10N("UI:Main:LobbyF3");
+            btnSecondary.LeftClick += BtnSecondary_LeftClick;
 
-            btnPrivateMessages = new XNAClientButton(WindowManager);
-            btnPrivateMessages.Name = "btnPrivateMessages";
-            btnPrivateMessages.ClientRectangle = new Rectangle(356, 9, UIDesignConstants.BUTTON_WIDTH_160, UIDesignConstants.BUTTON_HEIGHT);
-            btnPrivateMessages.Text = DEFAULT_PM_BTN_LABEL;
-            btnPrivateMessages.LeftClick += BtnPrivateMessages_LeftClick;
+            btnTertiary = new XNAClientButton(WindowManager);
+            btnTertiary.Name = "btnPrivateMessages";
+            btnTertiary.ClientRectangle = new Rectangle(356, 9, UIDesignConstants.BUTTON_WIDTH_160, UIDesignConstants.BUTTON_HEIGHT);
+            // btnTertiary.Text = DEFAULT_PM_BTN_LABEL;
+            btnTertiary.LeftClick += BtnTertiary_LeftClick;
 
             lblDate = new XNALabel(WindowManager);
             lblDate.Name = "lblDate";
@@ -187,9 +156,9 @@ namespace DTAClient.DXGUI.Generic
             lblConnectionStatus.FontIndex = 1;
             lblConnectionStatus.Text = "OFFLINE".L10N("UI:Main:StatusOffline");
 
-            AddChild(btnMainButton);
-            AddChild(btnCnCNetLobby);
-            AddChild(btnPrivateMessages);
+            AddChild(btnPrimary);
+            AddChild(btnSecondary);
+            AddChild(btnTertiary);
             AddChild(btnOptions);
             AddChild(lblTime);
             AddChild(lblDate);
@@ -220,14 +189,55 @@ namespace DTAClient.DXGUI.Generic
             base.Initialize();
 
             Keyboard.OnKeyPressed += Keyboard_OnKeyPressed;
-            connectionManager.Connected += ConnectionManager_Connected;
-            connectionManager.Disconnected += ConnectionManager_Disconnected;
-            connectionManager.ConnectionLost += ConnectionManager_ConnectionLost;
-            connectionManager.WelcomeMessageReceived += ConnectionManager_WelcomeMessageReceived;
-            connectionManager.AttemptedServerChanged += ConnectionManager_AttemptedServerChanged;
-            connectionManager.ConnectAttemptFailed += ConnectionManager_ConnectAttemptFailed;
 
             privateMessageHandler.UnreadMessageCountUpdated += PrivateMessageHandler_UnreadMessageCountUpdated;
+
+            topBarService.GetViewModel().Subscribe(TopBarViewModelUpdated);
+        }
+
+        private void TopBarViewModelUpdated(TopBarViewModel vm)
+        {
+            viewModel = vm;
+            if (vm.PrimarySwitch != null)
+                btnPrimary.Text = vm.PrimarySwitch.GetSwitchName() + " (F2)";
+            if (vm.SecondarySwitch != null)
+                btnSecondary.Text = vm.SecondarySwitch.GetSwitchName() + " (F3)";
+            if (vm.PriavateMessageSwitch != null)
+                btnTertiary.Text = vm.PriavateMessageSwitch.GetSwitchName() + " (F4)";
+
+            SetSwitchButtonsClickable(!lanMode);
+            RefreshConnectionStatus();
+
+            if (!lanMode)
+                SetSwitchButtonsClickable(!vm.IsViewingOptionsWindow);
+
+            SetOptionsButtonClickable(!vm.IsViewingOptionsWindow);
+        }
+
+        private void RefreshConnectionStatus()
+        {
+            switch (viewModel.CncnetConectionStatus)
+            {
+                case CnCNetConnectionStatusEnum.Connected:
+                    btnLogout.AllowClick = true;
+                    ConnectionEvent("CONNECTED".L10N("UI:Main:StatusConnected"));
+                    return;
+                case CnCNetConnectionStatusEnum.Connecting:
+                    btnLogout.AllowClick = false;
+                    ConnectionEvent("CONNECTING...".L10N("UI:Main:StatusConnecting"));
+                    BringDown();
+                    return;
+                case CnCNetConnectionStatusEnum.LanMode:
+                    btnLogout.AllowClick = false;
+                    ConnectionEvent("LAN MODE".L10N("UI:Main:StatusLanMode"));
+                    return;
+                case CnCNetConnectionStatusEnum.Offline:
+                    btnLogout.AllowClick = false;
+                    ConnectionEvent("OFFLINE".L10N("UI:Main:StatusOffline"));
+                    return;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(viewModel.CncnetConectionStatus));
+            }
         }
 
         private void PrivateMessageHandler_UnreadMessageCountUpdated(object sender, UnreadMessageCountEventArgs args)
@@ -235,7 +245,7 @@ namespace DTAClient.DXGUI.Generic
 
         private void UpdatePrivateMessagesBtnLabel(int unreadMessageCount)
         {
-            btnPrivateMessages.Text = DEFAULT_PM_BTN_LABEL;
+            btnTertiary.Text = DEFAULT_PM_BTN_LABEL;
             if (unreadMessageCount > 0)
             {
                 // TODO need to make a wider button to accommodate count
@@ -254,34 +264,6 @@ namespace DTAClient.DXGUI.Generic
             }
         }
 
-        private void ConnectionManager_ConnectionLost(object sender, Online.EventArguments.ConnectionLostEventArgs e)
-        {
-            if (!lanMode)
-                ConnectionEvent("OFFLINE".L10N("UI:Main:StatusOffline"));
-        }
-
-        private void ConnectionManager_ConnectAttemptFailed(object sender, EventArgs e)
-        {
-            if (!lanMode)
-                ConnectionEvent("OFFLINE".L10N("UI:Main:StatusOffline"));
-        }
-
-        private void ConnectionManager_AttemptedServerChanged(object sender, Online.EventArguments.AttemptedServerEventArgs e)
-        {
-            ConnectionEvent("CONNECTING...".L10N("UI:Main:StatusConnecting"));
-            BringDown();
-        }
-
-        private void ConnectionManager_WelcomeMessageReceived(object sender, Online.EventArguments.ServerMessageEventArgs e)
-            => ConnectionEvent("CONNECTED".L10N("UI:Main:StatusConnected"));
-
-        private void ConnectionManager_Disconnected(object sender, EventArgs e)
-        {
-            btnLogout.AllowClick = false;
-            if (!lanMode)
-                ConnectionEvent("OFFLINE".L10N("UI:Main:StatusOffline"));
-        }
-
         private void ConnectionEvent(string text)
         {
             lblConnectionStatus.Text = text;
@@ -294,54 +276,20 @@ namespace DTAClient.DXGUI.Generic
         {
             await connectionManager.DisconnectAsync().ConfigureAwait(false);
             LogoutEvent?.Invoke(this, null);
-            SwitchToPrimary();
+            topBarService.SwitchToPrimary();
         }
 
-        private void ConnectionManager_Connected(object sender, EventArgs e)
-            => btnLogout.AllowClick = true;
+        private void BtnPrimary_LeftClick(object sender, EventArgs e) 
+            => topBarService.SwitchToPrimary();
 
-        public void SwitchToPrimary()
-            => BtnMainButton_LeftClick(this, EventArgs.Empty);
+        private void BtnSecondary_LeftClick(object sender, EventArgs e) 
+            => topBarService.SwitchToCncNetLobby();
 
-        public ISwitchable GetTopMostPrimarySwitchable()
-            => primarySwitches[^1];
-
-        public void SwitchToSecondary()
-            => BtnCnCNetLobby_LeftClick(this, EventArgs.Empty);
-
-        private void BtnCnCNetLobby_LeftClick(object sender, EventArgs e)
-        {
-            LastSwitchType = SwitchType.SECONDARY;
-            primarySwitches[^1].SwitchOff();
-            cncnetLobbySwitch.SwitchOn();
-            privateMessageSwitch.SwitchOff();
-
-            // HACK warning
-            // TODO: add a way for DarkeningPanel to skip transitions
-            ((DarkeningPanel)((XNAControl)cncnetLobbySwitch).Parent).Alpha = 1.0f;
-        }
-
-        private void BtnMainButton_LeftClick(object sender, EventArgs e)
-        {
-            LastSwitchType = SwitchType.PRIMARY;
-            cncnetLobbySwitch.SwitchOff();
-            privateMessageSwitch.SwitchOff();
-            primarySwitches[^1].SwitchOn();
-
-            // HACK warning
-            // TODO: add a way for DarkeningPanel to skip transitions
-            if (((XNAControl)primarySwitches[^1]).Parent is DarkeningPanel darkeningPanel)
-                darkeningPanel.Alpha = 1.0f;
-        }
-
-        private void BtnPrivateMessages_LeftClick(object sender, EventArgs e)
-            => privateMessageSwitch.SwitchOn();
+        private void BtnTertiary_LeftClick(object sender, EventArgs e)
+            => topBarService.SwitchToSwitchableType<PrivateMessagingWindow>();
 
         private void BtnOptions_LeftClick(object sender, EventArgs e)
-        {
-            privateMessageSwitch.SwitchOff();
-            optionsWindow.Open();
-        }
+            => topBarService.SwitchToSwitchableType<OptionsWindow>();
 
         private void Keyboard_OnKeyPressed(object sender, KeyPressEventArgs e)
         {
@@ -353,14 +301,14 @@ namespace DTAClient.DXGUI.Generic
                 case Keys.F1:
                     BringDown();
                     break;
-                case Keys.F2 when btnMainButton.AllowClick:
-                    BtnMainButton_LeftClick(this, EventArgs.Empty);
+                case Keys.F2 when btnPrimary.AllowClick:
+                    BtnPrimary_LeftClick(this, EventArgs.Empty);
                     break;
-                case Keys.F3 when btnCnCNetLobby.AllowClick:
-                    BtnCnCNetLobby_LeftClick(this, EventArgs.Empty);
+                case Keys.F3 when btnSecondary.AllowClick:
+                    BtnSecondary_LeftClick(this, EventArgs.Empty);
                     break;
-                case Keys.F4 when btnPrivateMessages.AllowClick:
-                    BtnPrivateMessages_LeftClick(this, EventArgs.Empty);
+                case Keys.F4 when btnTertiary.AllowClick:
+                    BtnTertiary_LeftClick(this, EventArgs.Empty);
                     break;
                 case Keys.F12 when btnOptions.AllowClick:
                     BtnOptions_LeftClick(this, EventArgs.Empty);
@@ -383,32 +331,22 @@ namespace DTAClient.DXGUI.Generic
         }
 
         public void SetMainButtonText(string text)
-            => btnMainButton.Text = text;
+            => btnPrimary.Text = text;
 
         public void SetSwitchButtonsClickable(bool allowClick)
         {
-            if (btnMainButton != null)
-                btnMainButton.AllowClick = allowClick;
-            if (btnCnCNetLobby != null)
-                btnCnCNetLobby.AllowClick = allowClick;
-            if (btnPrivateMessages != null)
-                btnPrivateMessages.AllowClick = allowClick;
+            if (btnPrimary != null)
+                btnPrimary.AllowClick = allowClick;
+            if (btnSecondary != null)
+                btnSecondary.AllowClick = allowClick;
+            if (btnTertiary != null)
+                btnTertiary.AllowClick = allowClick;
         }
 
         public void SetOptionsButtonClickable(bool allowClick)
         {
             if (btnOptions != null)
                 btnOptions.AllowClick = allowClick;
-        }
-
-        public void SetLanMode(bool lanMode)
-        {
-            this.lanMode = lanMode;
-            SetSwitchButtonsClickable(!lanMode);
-            if (lanMode)
-                ConnectionEvent("LAN MODE".L10N("UI:Main:StatusLanMode"));
-            else
-                ConnectionEvent("OFFLINE".L10N("UI:Main:StatusOffline"));
         }
 
         public override void Update(GameTime gameTime)
@@ -457,11 +395,5 @@ namespace DTAClient.DXGUI.Generic
 
             Renderer.DrawRectangle(new Rectangle(X, ClientRectangle.Bottom - 2, Width, 1), UISettings.ActiveSettings.PanelBorderColor);
         }
-    }
-
-    public enum SwitchType
-    {
-        PRIMARY,
-        SECONDARY
     }
 }

@@ -17,8 +17,10 @@ using DTAClient.Domain.Multiplayer.CnCNet;
 using DTAClient.DXGUI.Generic;
 using DTAClient.DXGUI.Multiplayer.CnCNet;
 using DTAClient.DXGUI.Multiplayer.GameLobby.CommandHandlers;
+using DTAClient.Enums;
 using DTAClient.Online;
 using DTAClient.Online.EventArguments;
+using DTAClient.Services;
 using Localization;
 using Microsoft.Xna.Framework;
 using Rampastring.Tools;
@@ -40,6 +42,8 @@ internal sealed class CnCNetGameLobby : MultiplayerGameLobby
     private static readonly Color ERROR_MESSAGE_COLOR = Color.Yellow;
 
     private readonly TunnelHandler tunnelHandler;
+    private readonly CnCNetClientService cncnetClientService;
+    private readonly TopBarService topBarService;
     private readonly CnCNetManager connectionManager;
     private readonly string localGame;
     private readonly List<CommandHandlerBase> ctcpCommandHandlers;
@@ -91,16 +95,20 @@ internal sealed class CnCNetGameLobby : MultiplayerGameLobby
 
     public CnCNetGameLobby(
         WindowManager windowManager,
+        CnCNetClientService cncnetClientService,
+        TopBarService topBarService,
         TopBar topBar,
         CnCNetManager connectionManager,
         TunnelHandler tunnelHandler,
         GameCollection gameCollection,
         CnCNetUserData cncnetUserData,
-        MapLoader mapLoader,
+        MapLoaderService mapLoaderService,
         DiscordHandler discordHandler,
         PrivateMessagingWindow pmWindow)
-        : base(windowManager, "MultiplayerGameLobby", topBar, mapLoader, discordHandler)
+        : base(windowManager, "MultiplayerGameLobby", topBar, mapLoaderService, discordHandler)
     {
+        this.cncnetClientService = cncnetClientService;
+        this.topBarService = topBarService;
         this.connectionManager = connectionManager;
         this.tunnelHandler = tunnelHandler;
         this.gameCollection = gameCollection;
@@ -388,8 +396,7 @@ internal sealed class CnCNetGameLobby : MultiplayerGameLobby
                 BroadcastPlayerP2PRequestAsync().HandleTask();
         }
 
-        TopBar.AddPrimarySwitchable(this);
-        TopBar.SwitchToPrimary();
+        topBarService.AddPrimarySwitchable(this);
         WindowManager.SelectedControl = tbChatInput;
         ResetAutoReadyCheckbox();
         await UpdatePingAsync().ConfigureAwait(false);
@@ -505,7 +512,7 @@ internal sealed class CnCNetGameLobby : MultiplayerGameLobby
         v3ConnectionState.DisposeAsync().HandleTask();
         gamePlayerIds.Clear();
         GameLeft?.Invoke(this, EventArgs.Empty);
-        TopBar.RemovePrimarySwitchable(this);
+        topBarService.RemoveSwitchable(this);
         ResetDiscordPresence();
     }
 
@@ -1785,7 +1792,7 @@ internal sealed class CnCNetGameLobby : MultiplayerGameLobby
 #if WINFORMS
         WindowManager.FlashWindow();
 #endif
-        TopBar.SwitchToPrimary();
+        topBarService.SwitchToPrimary();
 
         if (IsHost)
             await channel.SendCTCPMessageAsync(CnCNetCommands.GET_READY_LOBBY, QueuedMessageType.GAME_GET_READY_MESSAGE, 0).ConfigureAwait(false);
@@ -2108,7 +2115,7 @@ internal sealed class CnCNetGameLobby : MultiplayerGameLobby
         string mapFileName = MapSharer.GetMapFileName(e.SHA1, e.MapName);
         Logger.Log("Map " + mapFileName + " downloaded, parsing.");
         string mapPath = "Maps/Custom/" + mapFileName;
-        Map map = MapLoader.LoadCustomMap(mapPath, out string returnMessage);
+        Map map = MapLoaderService.LoadCustomMap(mapPath, out string returnMessage);
 
         if (map != null)
         {

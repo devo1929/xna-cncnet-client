@@ -1,7 +1,9 @@
-﻿namespace DTAClient.DXGUI
+﻿using DTAClient.Enums;
+
+namespace DTAClient.DXGUI
 {
     /// <summary>
-    /// An interface for all switchable windows.
+    /// An interface for all switchable panels.
     /// </summary>
     public interface ISwitchable
     {

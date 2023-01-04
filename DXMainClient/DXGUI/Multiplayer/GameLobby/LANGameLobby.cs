@@ -20,6 +20,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ClientCore.Extensions;
+using DTAClient.Enums;
+using DTAClient.Services;
 
 namespace DTAClient.DXGUI.Multiplayer.GameLobby
 {
@@ -35,9 +37,9 @@ namespace DTAClient.DXGUI.Multiplayer.GameLobby
             string iniName,
             TopBar topBar,
             LANColor[] chatColors,
-            MapLoader mapLoader,
+            MapLoaderService mapLoaderService,
             DiscordHandler discordHandler)
-            : base(windowManager, iniName, topBar, mapLoader, discordHandler)
+            : base(windowManager, iniName, topBar, mapLoaderService, discordHandler)
         {
             this.chatColors = chatColors;
             encoding = Encoding.UTF8;
