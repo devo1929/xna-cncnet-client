@@ -13,5 +13,11 @@ namespace DTAClient.Online
 
         [JsonInclude]
         public DateTime GameTime { get; set; }
+        
+        [JsonIgnore]
+        public IRCUser User { get; set; }
+        
+        [JsonIgnore]
+        public bool IsOnline { get; set; }
     }
 }

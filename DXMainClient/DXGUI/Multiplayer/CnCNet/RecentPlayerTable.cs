@@ -1,19 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using DTAClient.Online;
+using Localization;
 using Rampastring.XNAUI;
 using Rampastring.XNAUI.XNAControls;
-using Localization;
 
 namespace DTAClient.DXGUI.Multiplayer.CnCNet
 {
-    internal sealed class RecentPlayerTable : XNAMultiColumnListBox
+    public sealed class RecentPlayerTable : XNAMultiColumnListBox
     {
         private readonly CnCNetManager connectionManager;
 
         public EventHandler<RecentPlayerTableRightClickEventArgs> PlayerRightClick;
 
-        public RecentPlayerTable(WindowManager windowManager, CnCNetManager connectionManager) : base(windowManager)
+        public RecentPlayerTable(
+            WindowManager windowManager,
+            CnCNetManager connectionManager
+        ) : base(windowManager)
         {
             this.connectionManager = connectionManager;
         }
@@ -21,7 +24,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
         public override void Initialize()
         {
             AllowRightClickUnselect = false;
-            
+
             base.Initialize();
 
             AddColumn("Player".L10N("UI:Main:RecentPlayerPlayer"));
@@ -83,7 +86,7 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
         {
             if (HoveredIndex < 0 || HoveredIndex >= ItemCount)
                 return;
-            
+
             SelectedIndex = HoveredIndex;
 
             var selectedItem = GetItem(0, SelectedIndex);

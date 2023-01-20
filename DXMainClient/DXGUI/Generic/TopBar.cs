@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using ClientCore.Extensions;
 using DTAClient.Domain.Multiplayer.CnCNet;
 using DTAClient.Online.EventArguments;
+using DTAClient.ViewModels;
 using DTAConfig;
 using Localization;
 
@@ -40,19 +41,18 @@ namespace DTAClient.DXGUI.Generic
         public TopBar(
             WindowManager windowManager,
             CnCNetManager connectionManager,
-            PrivateMessageHandler privateMessageHandler
+            PrivateMessagingWindowViewModel pmViewModel
         ) : base(windowManager)
         {
             downTimeWaitTime = TimeSpan.FromSeconds(DOWN_TIME_WAIT_SECONDS);
             this.connectionManager = connectionManager;
-            this.privateMessageHandler = privateMessageHandler;
+            this.pmViewModel = pmViewModel;
         }
 
         public SwitchType LastSwitchType { get; private set; }
 
         private List<ISwitchable> primarySwitches = new List<ISwitchable>();
         private ISwitchable cncnetLobbySwitch;
-        private ISwitchable privateMessageSwitch;
 
         private OptionsWindow optionsWindow;
 
@@ -68,7 +68,7 @@ namespace DTAClient.DXGUI.Generic
         private XNALabel lblConnectionStatus;
 
         private CnCNetManager connectionManager;
-        private readonly PrivateMessageHandler privateMessageHandler;
+        private readonly PrivateMessagingWindowViewModel pmViewModel;
 
         private CancellationTokenSource cncnetPlayerCountCancellationSource;
         private static readonly object locker = new object();
@@ -99,9 +99,6 @@ namespace DTAClient.DXGUI.Generic
 
         public void SetSecondarySwitch(ISwitchable switchable)
             => cncnetLobbySwitch = switchable;
-
-        public void SetTertiarySwitch(ISwitchable switchable)
-            => privateMessageSwitch = switchable;
 
         public void SetOptionsWindow(OptionsWindow optionsWindow)
         {
@@ -226,21 +223,6 @@ namespace DTAClient.DXGUI.Generic
             connectionManager.WelcomeMessageReceived += ConnectionManager_WelcomeMessageReceived;
             connectionManager.AttemptedServerChanged += ConnectionManager_AttemptedServerChanged;
             connectionManager.ConnectAttemptFailed += ConnectionManager_ConnectAttemptFailed;
-
-            privateMessageHandler.UnreadMessageCountUpdated += PrivateMessageHandler_UnreadMessageCountUpdated;
-        }
-
-        private void PrivateMessageHandler_UnreadMessageCountUpdated(object sender, UnreadMessageCountEventArgs args)
-            => UpdatePrivateMessagesBtnLabel(args.UnreadMessageCount);
-
-        private void UpdatePrivateMessagesBtnLabel(int unreadMessageCount)
-        {
-            btnPrivateMessages.Text = DEFAULT_PM_BTN_LABEL;
-            if (unreadMessageCount > 0)
-            {
-                // TODO need to make a wider button to accommodate count
-                // btnPrivateMessages.Text += $" ({unreadMessageCount})";
-            }
         }
 
         private void CnCNetInfoController_CnCNetGameCountUpdated(object sender, PlayerCountEventArgs e)
@@ -314,7 +296,7 @@ namespace DTAClient.DXGUI.Generic
             LastSwitchType = SwitchType.SECONDARY;
             primarySwitches[^1].SwitchOff();
             cncnetLobbySwitch.SwitchOn();
-            privateMessageSwitch.SwitchOff();
+            pmViewModel.Hide();
 
             // HACK warning
             // TODO: add a way for DarkeningPanel to skip transitions
@@ -325,7 +307,7 @@ namespace DTAClient.DXGUI.Generic
         {
             LastSwitchType = SwitchType.PRIMARY;
             cncnetLobbySwitch.SwitchOff();
-            privateMessageSwitch.SwitchOff();
+            pmViewModel.Hide();
             primarySwitches[^1].SwitchOn();
 
             // HACK warning
@@ -335,11 +317,11 @@ namespace DTAClient.DXGUI.Generic
         }
 
         private void BtnPrivateMessages_LeftClick(object sender, EventArgs e)
-            => privateMessageSwitch.SwitchOn();
+            => pmViewModel.Show();
 
         private void BtnOptions_LeftClick(object sender, EventArgs e)
         {
-            privateMessageSwitch.SwitchOff();
+            pmViewModel.Hide();
             optionsWindow.Open();
         }
 

@@ -17,11 +17,14 @@ using DTAClient.DXGUI.Multiplayer;
 using DTAClient.DXGUI.Multiplayer.CnCNet;
 using DTAClient.DXGUI.Multiplayer.GameLobby;
 using DTAClient.Online;
+using DTAClient.ViewModels;
 using DTAConfig;
 using DTAConfig.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Rampastring.XNAUI.XNAControls;
+using ReactiveUI;
+using Splat;
 using MainMenu = DTAClient.DXGUI.Generic.MainMenu;
 #if DX || (GL && WINFORMS)
 using System.Diagnostics;
@@ -54,6 +57,7 @@ namespace DTAClient.DXGUI
 
         protected override void Initialize()
         {
+            Locator.CurrentMutable.InitializeReactiveUI();
             Logger.Log("Initializing GameClass.");
 
             string windowTitle = ClientConfiguration.Instance.WindowTitle;
@@ -205,8 +209,8 @@ namespace DTAClient.DXGUI
                             .AddSingleton<CnCNetManager>()
                             .AddSingleton<TunnelHandler>()
                             .AddSingleton<DiscordHandler>()
-                            .AddSingleton<PrivateMessageHandler>()
-                            .AddSingleton<MapLoader>();
+                            .AddSingleton<MapLoader>()
+                            .AddSingleton<PrivateMessagingWindowViewModel>();
 
                         // singleton xna controls - same instance on each request
                         services
@@ -224,7 +228,9 @@ namespace DTAClient.DXGUI
                             .AddSingletonXnaControl<MainMenu>()
                             .AddSingletonXnaControl<MapPreviewBox>()
                             .AddSingletonXnaControl<GameLaunchButton>()
-                            .AddSingletonXnaControl<PlayerExtraOptionsPanel>();
+                            .AddSingletonXnaControl<PlayerExtraOptionsPanel>()
+                            .AddSingletonXnaControl<RecentPlayerTable>()
+                            .AddSingletonXnaControl<PrivateMessageNotificationBox>();
 
                         // transient xna controls - new instance on each request
                         services

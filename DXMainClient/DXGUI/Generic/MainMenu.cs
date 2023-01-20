@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ClientCore.Extensions;
 using ClientUpdater;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DTAClient.DXGUI.Generic
 {
@@ -40,6 +41,7 @@ namespace DTAClient.DXGUI.Generic
         /// </summary>
         public MainMenu(
             WindowManager windowManager,
+            IServiceProvider serviceProvider,
             SkirmishLobby skirmishLobby,
             LANLobby lanLobby,
             TopBar topBar,
@@ -50,10 +52,10 @@ namespace DTAClient.DXGUI.Generic
             CnCNetGameLoadingLobby cnCNetGameLoadingLobby,
             CnCNetGameLobby cnCNetGameLobby,
             PrivateMessagingPanel privateMessagingPanel,
-            PrivateMessagingWindow privateMessagingWindow,
             GameInProgressWindow gameInProgressWindow
         ) : base(windowManager)
         {
+            this.serviceProvider = serviceProvider;
             this.lanLobby = lanLobby;
             this.topBar = topBar;
             this.connectionManager = connectionManager;
@@ -64,7 +66,6 @@ namespace DTAClient.DXGUI.Generic
             this.cnCNetGameLoadingLobby = cnCNetGameLoadingLobby;
             this.cnCNetGameLobby = cnCNetGameLobby;
             this.privateMessagingPanel = privateMessagingPanel;
-            this.privateMessagingWindow = privateMessagingWindow;
             this.gameInProgressWindow = gameInProgressWindow;
             this.cncnetLobby.UpdateCheck += CncnetLobby_UpdateCheck;
             isMediaPlayerAvailable = IsMediaPlayerAvailable();
@@ -80,6 +81,7 @@ namespace DTAClient.DXGUI.Generic
 
         private SkirmishLobby skirmishLobby;
 
+        private readonly IServiceProvider serviceProvider;
         private LANLobby lanLobby;
 
         private CnCNetManager connectionManager;
@@ -92,7 +94,6 @@ namespace DTAClient.DXGUI.Generic
         private readonly CnCNetGameLoadingLobby cnCNetGameLoadingLobby;
         private readonly CnCNetGameLobby cnCNetGameLobby;
         private readonly PrivateMessagingPanel privateMessagingPanel;
-        private readonly PrivateMessagingWindow privateMessagingWindow;
         private readonly GameInProgressWindow gameInProgressWindow;
 
         private XNAMessageBox firstRunMessageBox;
@@ -548,17 +549,15 @@ namespace DTAClient.DXGUI.Generic
             optionsWindow.SetTopBar(topBar);
             DarkeningPanel.AddAndInitializeWithControl(WindowManager, optionsWindow);
             WindowManager.AddAndInitializeControl(privateMessagingPanel);
-            privateMessagingPanel.AddChild(privateMessagingWindow);
-            topBar.SetTertiarySwitch(privateMessagingWindow);
             topBar.SetOptionsWindow(optionsWindow);
             WindowManager.AddAndInitializeControl(gameInProgressWindow);
+            WindowManager.AddAndInitializeControl(serviceProvider.GetRequiredService<PrivateMessageNotificationBox>());
 
             skirmishLobby.Disable();
             cncnetLobby.Disable();
             cnCNetGameLobby.Disable();
             cnCNetGameLoadingLobby.Disable();
             lanLobby.Disable();
-            privateMessagingWindow.Disable();
             optionsWindow.Disable();
 
             WindowManager.AddAndInitializeControl(topBar);

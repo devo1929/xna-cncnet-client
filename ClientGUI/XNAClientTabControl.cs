@@ -20,6 +20,8 @@ namespace ClientGUI
             base.Initialize();
         }
 
+        public void AddTab(XNAClientTabControlTab tab) => AddTab(tab.Text, tab.Width);
+
         public void AddTab(string text, int width)
         {
             string tabAssetName = width + "pxtab";

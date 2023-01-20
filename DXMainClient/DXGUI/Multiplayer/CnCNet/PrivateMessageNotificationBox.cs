@@ -6,8 +6,13 @@ using Rampastring.XNAUI;
 using Rampastring.XNAUI.XNAControls;
 using System;
 using System.IO;
+using System.Linq;
+using System.Reactive.Linq;
 using System.Reflection;
 using ClientCore.CnCNet5;
+using DTAClient.Online;
+using DTAClient.ViewModels;
+using ReactiveUI;
 using SixLabors.ImageSharp;
 using Color = Microsoft.Xna.Framework.Color;
 using Rectangle = Microsoft.Xna.Framework.Rectangle;
@@ -18,14 +23,18 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
     /// A box that notifies users of new private messages,
     /// top-right of the game window.
     /// </summary>
-    public class PrivateMessageNotificationBox : XNAPanel
+    public class PrivateMessageNotificationBox : XNAPanel, IViewFor<PrivateMessagingWindowViewModel>
     {
         const double DOWN_TIME_WAIT_SECONDS = 4.0;
         const double DOWN_MOVEMENT_RATE = 2.0;
         const double UP_MOVEMENT_RATE = 2.0;
 
-        public PrivateMessageNotificationBox(WindowManager windowManager) : base(windowManager)
+        public PrivateMessageNotificationBox(
+            WindowManager windowManager,
+            PrivateMessagingWindowViewModel viewModel
+        ) : base(windowManager)
         {
+            ViewModel = viewModel;
             downTimeWaitTime = TimeSpan.FromSeconds(DOWN_TIME_WAIT_SECONDS);
         }
 
@@ -40,6 +49,8 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
         bool isDown = false;
 
         double locationY = -100.0;
+
+        private NotificationPopupMessage notificationPopupMessage;
 
         public override void Initialize()
         {
@@ -101,16 +112,46 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
             AddChild(lblSender);
             AddChild(lblMessage);
 
+            Enabled = false;
+            Visible = false;
+
             base.Initialize();
+            AddLeftClickListeners();
+
+            this.WhenAnyValue(v => v.ViewModel.NotificationPopupMessage)
+                .Subscribe(ShowPrivateMessagePopup);
         }
 
-        public void Show(Texture2D gameIcon, string sender, string message)
+        private void ShowPrivateMessagePopup(NotificationPopupMessage notificationPopupMessage)
+        {
+            if (notificationPopupMessage == null)
+                return;
+
+            Show(notificationPopupMessage);
+        }
+
+        private void AddLeftClickListeners()
+        {
+            foreach (XNAControl child in Children)
+                child.LeftClick += OnLeftClick;
+
+            LeftClick += OnLeftClick;
+        }
+
+        private void OnLeftClick(object sender, EventArgs eventArgs)
+        {
+            Hide();
+            ViewModel.ShowForUser(notificationPopupMessage.IrcUser);
+        }
+
+        public void Show(NotificationPopupMessage message)
         {
             Visible = true;
             Enabled = true;
-            gameIconPanel.BackgroundTexture = gameIcon;
-            lblSender.Text = sender + ":";
-            lblMessage.Text = message;
+            notificationPopupMessage = message;
+            gameIconPanel.BackgroundTexture = notificationPopupMessage.GameIcon;
+            lblSender.Text = notificationPopupMessage.IrcUser.Name + ":";
+            lblMessage.Text = notificationPopupMessage.Message;
 
             if (lblMessage.Right > Width)
             {
@@ -172,5 +213,13 @@ namespace DTAClient.DXGUI.Multiplayer.CnCNet
 
             base.Update(gameTime);
         }
+
+        object IViewFor.ViewModel
+        {
+            get => ViewModel;
+            set => ViewModel = (PrivateMessagingWindowViewModel)value;
+        }
+
+        public PrivateMessagingWindowViewModel ViewModel { get; set; }
     }
 }
